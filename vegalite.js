@@ -346,8 +346,7 @@ const TEMPLATES = [
   { id:"target", name:"TARGET", icon:"▭─",
     spec: { "$schema":SCHEMA, "data":{"url":DS+"stocks.csv"},
       "transform":[
-        {"filter":{"field":"symbol","equal":"GOOG"}},
-        {"calculate":"(430)","as":"_target"}
+        {"filter":{"field":"symbol","equal":"GOOG"}}
       ],
       "spacing":50,
       "vconcat":[
@@ -361,10 +360,10 @@ const TEMPLATES = [
           "layer":[
             {"mark":{"type":"tick","filled":true,"color":"#454545","size":35,"thickness":1,"opacity":1},
              "encoding":{"x":{"field":"_target","type":"quantitative","axis":null}}},
-            {"mark":{"type":"rect","color":"#454545","height":1,"yOffset":15},
-             "encoding":{"x":{"field":"_target","type":"quantitative","axis":null}}},
-            {"mark":{"type":"bar","cornerRadius":10,"height":25,
-                     "color":{"expr":"datum._avg < datum._target ? '#ec7629' : '#0c4d25'"}},
+            {"mark":{"type":"rect","color":"#454545","height":1,"yOffset":15,"opacity":1},
+             "encoding":{"x":{"field":"_avg","type":"quantitative","axis":null},
+                         "x2":{"field":"_target"}}},
+            {"mark":{"type":"bar","cornerRadiusEnd":5,"height":20},
              "encoding":{"x":{"field":"_avg","type":"quantitative","title":null,"axis":null}}},
             {"mark":{"type":"text","yOffset":-30,"size":14,"fontWeight":600},
              "encoding":{"text":{"field":"_target","format":",.0f"},
