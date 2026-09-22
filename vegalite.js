@@ -264,7 +264,7 @@ const TEMPLATES = [
             {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
             {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
           ],
-          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":52,"yOffset":-30,"color":"#000000"},
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":52,"yOffset":-30},
           "encoding":{
             "text":{"value":"Total"},
             "x":{"field":"date","aggregate":"max"},
@@ -276,7 +276,7 @@ const TEMPLATES = [
             {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
             {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
           ],
-          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":104,"yOffset":-30,"color":"#000000"},
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":104,"yOffset":-30},
           "encoding":{
             "text":{"value":"Min"},
             "x":{"field":"date","aggregate":"max"},
