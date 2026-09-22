@@ -379,13 +379,6 @@ body.light-mode .cm-patch-highlight-wrap {
 }
 .db-empty-icon { font-size: 28px; opacity: 0.2; }
 
-/* ─── STATUS DOT ─── */
-.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-ok { background: var(--green); }
-.dot-err { background: var(--red); }
-.dot-spin { background: var(--accent); animation: blink 0.8s ease-in-out infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
 /* ─── BUTTONS ─── */
 .btn {
   background: var(--surface2); border: 1px solid var(--border2); color: var(--dim);

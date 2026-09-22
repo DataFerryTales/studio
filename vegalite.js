@@ -533,7 +533,6 @@ function _isHlTransform(t) {
 // ─────────────────────────────────────────────────────────────
 let cmEditor = null;  // CodeMirror instance
 const errorBar   = document.getElementById('error-bar');
-const statusDot  = document.getElementById('status-dot');
 const vegaBox    = document.getElementById('vega-container');
 const fieldList  = document.getElementById('field-list');
 const fieldsSec  = document.getElementById('fields-section');
@@ -2774,9 +2773,7 @@ function formatJSON() {
   } catch(e) { err("JSON: " + e.message); }
 }
 
-function dot(state) {
-  statusDot.className = 'dot dot-' + state;
-}
+function dot() {}
 
 // ── Error line tracking ──
 let _errLine = null;          // currently marked line handle
