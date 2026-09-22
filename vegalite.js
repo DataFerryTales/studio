@@ -57,13 +57,6 @@ const TEMPLATES = [
       }
     }
   },
-  { id:"line", name:"LINE", icon:"╱╱╱",
-    spec: { "$schema":SCHEMA, "title":"Line Chart", "data":{"url":DS+"stocks.csv"},
-      "transform":[{"filter":"datum.symbol === 'GOOG'"}],
-      "mark":{"type":"line","point":{"filled":true,"size":40}},
-      "encoding":{ "x":{"field":"date","type":"temporal","timeUnit":"yearmonthdate"}, "y":{"field":"price","type":"quantitative"} }
-    }
-  },
   { id:"multiline", name:"MULTI-LINE", icon:"≈≈≈",
     spec: { "$schema":SCHEMA, "title":"Multi-Series Line", "data":{"url":DS+"stocks.csv"},
       "mark":"line",
@@ -100,27 +93,6 @@ const TEMPLATES = [
     spec: { "$schema":SCHEMA, "title":"Box Plot", "data":{"url":DS+"cars.json"},
       "mark":{"type":"boxplot","extent":"min-max"},
       "encoding":{ "x":{"field":"Origin","type":"nominal"}, "y":{"field":"Miles_per_Gallon","type":"quantitative","title":"MPG"} }
-    }
-  },
-  { id:"layer", name:"LAYER", icon:"⧉⧉",
-    spec: { "$schema":SCHEMA, "title":"Bar + Labels (Layered)", "data":{"url":DS+"stocks.csv"},
-      "transform":[{"filter":"datum.symbol === 'GOOG'"}],
-      "encoding":{
-        "x":{"field":"date","timeUnit":"year","type":"ordinal","axis":{"title":"Year"}},
-        "y":{"field":"price","type":"quantitative","aggregate":"mean","axis":{"title":"Mean Price"}}
-      },
-      "layer":[
-        {
-          "mark":{"type":"bar"}
-        },
-        {
-          "mark":{"type":"text","yOffset":-10,"fontWeight":"bold"},
-          "encoding":{
-            "text":{"field":"price","type":"quantitative","aggregate":"mean","format":".0f"},
-            "color":{"value":"#f59e0b"}
-          }
-        }
-      ]
     }
   },
   { id:"facet", name:"FACET", icon:"⊞⊞",
@@ -420,20 +392,6 @@ const TEMPLATES = [
                "y":{"field":"price","type":"quantitative","aggregate":"max"}
              }}
           ]
-        }
-      ]
-    }
-  },
-  { id:"blank", name:"BLANK", icon:"◻",
-    spec: { "$schema":SCHEMA, "title":"My Chart",
-      "data":{"name":"dataset"},
-      "layer":[
-        {
-          "mark":{"type":"bar"},
-          "encoding":{
-            "x":{"field":"x_field","type":"nominal","axis":{"title":"X Axis"}},
-            "y":{"field":"y_field","type":"quantitative","axis":{"title":"Y Axis"}}
-          }
         }
       ]
     }
