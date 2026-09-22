@@ -722,7 +722,8 @@ function initResizers() {
     if (vDragging) {
       const total = workspace.getBoundingClientRect().width;
       const rw    = vResizer.getBoundingClientRect().width;
-      const newW  = Math.max(200, Math.min(total - rw - 200, vStartW + (e.clientX - vStartX)));
+      const minW  = Math.max(200, total * 0.3);
+      const newW  = Math.max(minW, Math.min(total - rw - 200, vStartW + (e.clientX - vStartX)));
       leftPanel.style.width = newW + 'px';
       if (cmEditor) cmEditor.refresh();
     }

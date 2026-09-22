@@ -308,7 +308,7 @@ body.light-mode .cm-patch-highlight-wrap {
 }
 
 /* ─── PREVIEW PANEL ─── */
-.preview-panel { flex: 1; min-width: 0; background: var(--surface); display: flex; flex-direction: column; }
+.preview-panel { flex: 1; min-width: 0; max-width: 70%; background: var(--surface); display: flex; flex-direction: column; }
 .preview-top {
   flex: 1; min-height: 0; overflow: auto;
   display: flex; align-items: center; justify-content: center;
@@ -759,11 +759,11 @@ select {
 .tab-icon { font-size: 14px; font-family: var(--mono); opacity: 0.6; }
 
 .tab-bar-right {
-  flex: 1; display: flex; align-items: center; justify-content: flex-end;
-  padding: 4px 10px; gap: 8px; overflow: visible;
+  flex: 1; display: flex; align-items: center; justify-content: flex-start;
+  padding: 4px 10px; gap: 6px 8px; overflow: visible;
   flex-wrap: wrap; min-height: 42px;
 }
-.tab-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tab-actions { display: flex; align-items: center; gap: 6px 8px; flex-wrap: nowrap; }
 
 .tab-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
