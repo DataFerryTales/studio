@@ -164,7 +164,7 @@ const TEMPLATES = [
       "width":200, "height":200, "view":{"stroke":null},
       "layer":[
         {
-          "mark":{"type":"arc","outerRadius":90,"innerRadius":89,"color":"#555555"}
+          "mark":{"type":"arc","outerRadius":90,"innerRadius":89}
         },
         {
           "mark":{"type":"arc","outerRadius":100,"innerRadius":80},
@@ -243,25 +243,20 @@ const TEMPLATES = [
       },
       "layer":[
         {
-          "mark":{"type":"rect","tooltip":true},
+          "mark":{"type":"rect","tooltip":true}
+        },
+        {
+          "mark":{"type":"text","fontSize":11,"color":"#000000"},
           "encoding":{
-            "color":{"condition":{"test":{"field":"__selected__","equal":"on"},"value":"#7b516f"},"value":"#e3e3e3"},
-            "opacity":{"condition":{"test":{"field":"__selected__","equal":"off"},"value":0.5},"value":1}
+            "text":{"field":"price","format":",.0f"}
           }
         },
         {
-          "mark":{"type":"text","fontSize":11},
-          "encoding":{
-            "text":{"field":"price","format":",.0f"},
-            "color":{"condition":{"test":{"field":"__selected__","equal":"on"},"value":"white"},"value":"black"}
-          }
-        },
-        {
-          "mark":{"type":"rect","color":"#e3e3e3","xOffset":52},
+          "mark":{"type":"rect","xOffset":52},
           "encoding":{"x":{"field":"date","aggregate":"max"}}
         },
         {
-          "mark":{"type":"rect","color":"#e3e3e3","xOffset":104},
+          "mark":{"type":"rect","xOffset":104},
           "encoding":{"x":{"field":"date","aggregate":"max"}}
         },
         {
@@ -269,7 +264,7 @@ const TEMPLATES = [
             {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
             {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
           ],
-          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":52,"yOffset":-30,"color":"black"},
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":52,"yOffset":-30,"color":"#000000"},
           "encoding":{
             "text":{"value":"Total"},
             "x":{"field":"date","aggregate":"max"},
@@ -281,7 +276,7 @@ const TEMPLATES = [
             {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
             {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
           ],
-          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":104,"yOffset":-30,"color":"black"},
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":104,"yOffset":-30,"color":"#000000"},
           "encoding":{
             "text":{"value":"Min"},
             "x":{"field":"date","aggregate":"max"},
@@ -289,14 +284,14 @@ const TEMPLATES = [
           }
         },
         {
-          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":52},
+          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":52,"color":"#000000"},
           "encoding":{
             "text":{"field":"price","type":"quantitative","aggregate":"sum","format":",.0f"},
             "x":{"field":"date","aggregate":"max"}
           }
         },
         {
-          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":104},
+          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":104,"color":"#000000"},
           "encoding":{
             "text":{"field":"price","type":"quantitative","aggregate":"min","format":",.0f"},
             "x":{"field":"date","aggregate":"max"}
@@ -358,9 +353,9 @@ const TEMPLATES = [
             {"calculate":"(450)","as":"_target"}
           ],
           "layer":[
-            {"mark":{"type":"tick","filled":true,"color":"#454545","size":35,"thickness":1,"opacity":1},
+            {"mark":{"type":"tick","filled":true,"size":35,"thickness":1,"opacity":1},
              "encoding":{"x":{"field":"_target","type":"quantitative","axis":null}}},
-            {"mark":{"type":"rect","color":"#454545","height":1,"yOffset":15,"opacity":1},
+            {"mark":{"type":"rect","height":1,"yOffset":15,"opacity":1},
              "encoding":{"x":{"field":"_avg","type":"quantitative","axis":null},
                          "x2":{"field":"_target"}}},
             {"mark":{"type":"bar","cornerRadiusEnd":5,"height":20},
