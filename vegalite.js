@@ -5747,9 +5747,6 @@ function syncTransformPanel(root) {
 
 // ── Wire up all controls ──────────────────────────────────────
 (function initPropsPanel() {
-  document.getElementById('btn-collapse-all').onclick = () => {
-    document.querySelectorAll('.props-section').forEach(s => s.classList.remove('open'));
-  };
   // Title — use 'change' on text/number so we don't re-render mid-typing
   ['pp-title-text', 'pp-title-sub', 'pp-title-size', 'pp-title-sub-size', 'pp-title-anchor'].forEach(id =>
     document.getElementById(id).addEventListener('change', applyTitleProps));
