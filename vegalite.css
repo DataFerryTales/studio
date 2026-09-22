@@ -418,21 +418,6 @@ body.light-mode .cm-patch-highlight-wrap {
 }
 
 /* Add-layer dropdown */
-.add-layer-wrap { position: relative; }
-.add-layer-menu {
-  display: none; position: absolute; top: calc(100% + 4px); right: 0; z-index: 200;
-  background: var(--surface); border: 1px solid var(--border2); border-radius: 4px;
-  min-width: 148px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); overflow: hidden;
-}
-.add-layer-menu.open { display: block; }
-.add-layer-opt {
-  display: block; width: 100%; padding: 8px 13px; text-align: left;
-  background: none; border: none; border-bottom: 1px solid var(--border);
-  color: var(--text); font-size: 12px; font-family: var(--font); cursor: pointer;
-  letter-spacing: 0.02em;
-}
-.add-layer-opt:last-child { border-bottom: none; }
-.add-layer-opt:hover { background: var(--surface2); color: var(--accent); }
 
 select {
   background: var(--surface2); border: 1px solid var(--border2); color: var(--dim);
@@ -648,6 +633,7 @@ select {
 }
 #props-panel.collapsed #props-body { display: none; }
 #props-panel.collapsed #props-toggle-label { display: none; }
+#props-panel.collapsed #props-reset-wrap { display: none; }
 
 .props-section { margin-bottom: 2px; }
 .props-section-head {

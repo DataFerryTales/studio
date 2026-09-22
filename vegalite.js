@@ -559,9 +559,6 @@ function switchTab(name) {
     else          show = a.id === 'tab-actions-spec';
     a.classList.toggle('hidden', !show);
   });
-  // Hide + LAYER in config view (doesn't apply to config JSON)
-  document.getElementById('add-layer-wrap').style.display =
-    (!isData && activeEditorView === 'config') ? 'none' : '';
   document.getElementById('tab-data').classList.toggle('hidden', !isData);
   document.getElementById('tab-spec').classList.toggle('hidden', isData);
   if (!isData && cmEditor) setTimeout(() => cmEditor.refresh(), 0);
@@ -580,9 +577,6 @@ function switchEditorView(view) {
   // Show correct toolbar actions — spec toolbar stays visible for both spec and config views
   document.getElementById('tab-actions-spec').classList.remove('hidden');
   document.getElementById('tab-actions-config').classList.add('hidden');
-  // Hide + LAYER in config view (not applicable to config JSON)
-  document.getElementById('add-layer-wrap').style.display = view === 'config' ? 'none' : '';
-
   // Load the target buffer into CM without triggering a render
   suppressRender = true;
   cmEditor.setValue(view === 'spec' ? specBuffer : configBuffer);
@@ -1856,18 +1850,7 @@ function bindEvents() {
     setTimeout(syncPropsFromSpec, 80);
   });
 
-  document.getElementById('btn-add-layer').addEventListener('click', e => {
-    e.stopPropagation();
-    document.getElementById('add-layer-menu').classList.toggle('open');
-  });
-  document.querySelectorAll('.add-layer-opt').forEach(btn => {
-    btn.addEventListener('click', () => {
-      addLayer(btn.dataset.type);
-      document.getElementById('add-layer-menu').classList.remove('open');
-    });
-  });
   document.addEventListener('click', () => {
-    document.getElementById('add-layer-menu')?.classList.remove('open');
     document.getElementById('share-menu')?.classList.remove('open');
   });
 

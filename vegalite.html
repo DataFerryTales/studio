@@ -469,6 +469,10 @@
 
       </div><!-- /config-props-body -->
 
+      <div id="props-reset-wrap" style="flex-shrink:0;padding:8px 10px;border-top:1px solid var(--border);">
+        <button class="btn" id="btn-reset-template" style="width:100%;font-size:11px;padding:4px 8px;opacity:0.6;" title="Restore the original spec for this visual">↺ RESTORE ORIGINAL</button>
+      </div>
+
     </div><!-- /props-panel -->
 
     <!-- ─── LEFT PANEL (tabbed) ─── -->
@@ -496,17 +500,6 @@
             <button class="btn" id="btn-run" title="Render chart (Ctrl+Enter)" style="display:none">▶ RUN</button>
             <button class="btn btn-primary" id="btn-live-toggle" title="Toggle live vs manual rendering">⚡ LIVE</button>
             <button class="btn" id="btn-format">FORMAT</button>
-            <button class="btn" id="btn-reset-template" title="Reset current template to default">↺ RESET</button>
-            <div class="add-layer-wrap" id="add-layer-wrap">
-              <button class="btn" id="btn-add-layer" title="Add a new layer">+ LAYER ▾</button>
-              <div class="add-layer-menu" id="add-layer-menu">
-                <button class="add-layer-opt" data-type="text">Text labels</button>
-                <button class="add-layer-opt" data-type="bar">Bar</button>
-                <button class="add-layer-opt" data-type="line">Line</button>
-                <button class="add-layer-opt" data-type="point">Point</button>
-                <button class="add-layer-opt" data-type="rule">Rule</button>
-              </div>
-            </div>
             <div class="zoom-ctrl">
               <button class="zoom-btn" id="btn-edz-out" title="Decrease font size">−</button>
               <span class="zoom-lbl" id="edz-label">14px</span>
