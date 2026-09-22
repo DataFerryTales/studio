@@ -1,0 +1,5849 @@
+// ─────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────
+const SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json";
+const DS = "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/";
+
+function _buildCfg(bg, font, axisLabel, axisGrid, axisDomain, titleColor, mark, text, range) {
+  const mc = { color: mark };
+  return {
+    background: bg, view: { stroke: null }, font,
+    axis: { labelColor: axisLabel, titleColor: axisLabel, gridColor: axisGrid, domainColor: axisDomain, tickColor: axisDomain, labelFontSize: 11, titleFontSize: 11, titleFontWeight: 600 },
+    legend: { labelColor: axisLabel, titleColor: axisLabel, labelFontSize: 11, titleFontSize: 11 },
+    title: { color: titleColor, fontSize: 14, fontWeight: 700, anchor: "start", offset: 8 },
+    range: { category: range },
+    mark: mc, bar: mc, line: mc, point: mc, arc: mc, rule: mc, tick: mc,
+    text: { color: text }
+  };
+}
+
+const CONFIGS = [
+  { id: "arctic", name: "Arctic Blue", cfg: _buildCfg("#020d18", "Calibri, sans-serif", "#90b8d4", "#0d1f2d", "#1a3a52", "#e0f0ff", "#00b4d8", "#90b8d4", ["#00b4d8","#f72585","#48cae4","#90e0ef","#ade8f4","#caf0f8","#0077b6","#7b2d8b","#0096c7","#4cc9f0"]) },
+  { id: "midnight", name: "Midnight", cfg: _buildCfg("#0a0a0b", "Verdana, sans-serif", "#9ca3af", "#222226", "#2e2e34", "#e4e4e8", "#f59e0b", "#9ca3af", ["#f59e0b","#60a5fa","#34d399","#a78bfa","#fb923c","#f87171","#38bdf8","#4ade80","#e879f9","#facc15"]) },
+  { id: "slate", name: "Slate & Coral", cfg: _buildCfg("#0f172a", "Gill Sans, Gill Sans MT, sans-serif", "#94a3b8", "#1e293b", "#334155", "#f1f5f9", "#fb7185", "#94a3b8", ["#fb7185","#38bdf8","#34d399","#fbbf24","#a78bfa","#f97316","#22d3ee","#4ade80","#e879f9","#facc15"]) },
+  { id: "forest", name: "Forest & Gold", cfg: _buildCfg("#0d1f0d", "Trebuchet MS, sans-serif", "#86a789", "#1a2e1a", "#2d4a2d", "#d4edda", "#d4a017", "#86a789", ["#d4a017","#52b788","#74c69d","#b7e4c7","#f4a261","#e76f51","#2d6a4f","#95d5b2","#ffd166","#06d6a0"]) },
+  { id: "clean-light", name: "Clean Light", cfg: _buildCfg("#ffffff", "Calibri, sans-serif", "#44445a", "#ebebf5", "#c8c8dc", "#1a1a2e", "#2563eb", "#44445a", ["#2563eb","#16a34a","#dc2626","#d97706","#7c3aed","#0891b2","#be185d","#65a30d","#ea580c","#0d9488"]) },
+  { id: "warm-sand", name: "Warm Sand (Default)", cfg: _buildCfg("#fdf6ed", "Verdana, sans-serif", "#6b5744", "#ede4d4", "#d4c4aa", "#3b2a1a", "#b45309", "#6b5744", ["#b45309","#374151","#b91c1c","#047857","#1d4ed8","#7c2d12","#92400e","#065f46","#1e3a8a","#78350f"]) },
+  { id: "soft-rose", name: "Soft Rose", cfg: _buildCfg("#fff5f7", "Trebuchet MS, sans-serif", "#7a3a50", "#fce4ea", "#f0b8c8", "#4a1028", "#be185d", "#7a3a50", ["#be185d","#7c3aed","#0891b2","#b45309","#16a34a","#dc2626","#6d28d9","#0e7490","#92400e","#065f46"]) },
+  { id: "slate-light", name: "Slate Light", cfg: _buildCfg("#f1f5f9", "Optima, Candara, sans-serif", "#475569", "#e2e8f0", "#cbd5e1", "#0f172a", "#0284c7", "#475569", ["#0284c7","#dc2626","#0d9488","#7c3aed","#d97706","#16a34a","#be185d","#ea580c","#2563eb","#065f46"]) },
+];
+
+
+const SAMPLES = [
+  { name: "Cars",       file: "cars.json" },
+  { name: "Iris",       file: "iris.json", base: "https://cdn.jsdelivr.net/npm/vega-datasets@1/data/" },
+  { name: "Weather",    file: "seattle-weather.csv" },
+  { name: "Movies",     file: "movies.json" },
+  { name: "Stocks",     file: "stocks.csv" },
+  { name: "Barley",     file: "barley.json" },
+  { name: "Population", file: "population.json" },
+  { name: "Gapminder",  file: "gapminder.json" },
+];
+
+const TEMPLATES = [
+  { id:"bar", name:"BAR", icon:"▐▌▌",
+    spec: { "$schema":SCHEMA, "title":"Bar Chart", "data":{"url":DS+"population.json"},
+      "transform":[{"filter":"datum.year == 2000"}],
+      "mark":{"type":"bar"},
+      "encoding":{ "x":{"field":"people","type":"quantitative","aggregate":"sum","axis":{"title":"Population"}}, "y":{"field":"age","type":"ordinal","axis":{"title":"Age Group"}} }
+    }
+  },
+  { id:"col", name:"COLUMN", icon:"▐██",
+    spec: { "$schema":SCHEMA, "title":"Column Chart", "data":{"url":DS+"seattle-weather.csv"},
+      "mark":"bar",
+      "encoding":{
+        "x":{"field":"date","type":"ordinal","timeUnit":"yearmonth","axis":{"title":"Month"}},
+        "y":{"field":"precipitation","type":"quantitative","aggregate":"mean","stack":null,"axis":{"title":"Avg Precipitation (mm)"}}
+      }
+    }
+  },
+  { id:"line", name:"LINE", icon:"╱╱╱",
+    spec: { "$schema":SCHEMA, "title":"Line Chart", "data":{"url":DS+"stocks.csv"},
+      "transform":[{"filter":"datum.symbol === 'GOOG'"}],
+      "mark":{"type":"line","point":{"filled":true,"size":40}},
+      "encoding":{ "x":{"field":"date","type":"temporal","timeUnit":"yearmonthdate"}, "y":{"field":"price","type":"quantitative"} }
+    }
+  },
+  { id:"multiline", name:"MULTI-LINE", icon:"≈≈≈",
+    spec: { "$schema":SCHEMA, "title":"Multi-Series Line", "data":{"url":DS+"stocks.csv"},
+      "mark":"line",
+      "encoding":{ "x":{"field":"date","type":"temporal"}, "y":{"field":"price","type":"quantitative"}, "color":{"field":"symbol","type":"nominal"} }
+    }
+  },
+  { id:"scatter", name:"SCATTER", icon:"∴∴∴",
+    spec: { "$schema":SCHEMA, "title":"Scatter Plot", "data":{"url":DS+"cars.json"},
+      "mark":{"type":"point","filled":true,"size":60,"opacity":0.75},
+      "encoding":{ "x":{"field":"Horsepower","type":"quantitative"}, "y":{"field":"Miles_per_Gallon","type":"quantitative","title":"MPG"}, "color":{"field":"Origin","type":"nominal"}, "tooltip":[{"field":"Name"},{"field":"Horsepower"},{"field":"Miles_per_Gallon","title":"MPG"},{"field":"Origin"}] }
+    }
+  },
+  { id:"area", name:"AREA", icon:"▲▲▲",
+    spec: { "$schema":SCHEMA, "title":"Stacked Area", "data":{"url":DS+"unemployment-across-industries.json"},
+      "transform":[{"filter":"datum.series === 'Construction' || datum.series === 'Manufacturing'"}],
+      "mark":"area",
+      "encoding":{ "x":{"field":"date","type":"temporal","timeUnit":"yearmonth"}, "y":{"field":"count","type":"quantitative","aggregate":"sum"}, "color":{"field":"series","type":"nominal"} }
+    }
+  },
+  { id:"hist", name:"HISTOGRAM", icon:"▐█▌",
+    spec: { "$schema":SCHEMA, "title":"Histogram", "data":{"url":DS+"cars.json"},
+      "transform":[{"filter":"isValid(datum.Horsepower)"}],
+      "mark":{"type":"bar","binSpacing":1},
+      "encoding":{ "x":{"bin":{"maxbins":20},"field":"Horsepower","type":"quantitative","title":"Horsepower"}, "y":{"aggregate":"count","type":"quantitative"} }
+    }
+  },
+  { id:"heatmap", name:"HEATMAP", icon:"▦▦▦",
+    spec: { "$schema":SCHEMA, "title":"Temperature Heatmap", "data":{"url":DS+"seattle-weather.csv"},
+      "mark":"rect",
+      "encoding":{ "x":{"field":"date","timeUnit":"date","type":"ordinal","axis":{"title":"Day of Month"}}, "y":{"field":"date","timeUnit":"month","type":"ordinal","axis":{"title":"Month"}}, "color":{"field":"temp_max","aggregate":"max","type":"quantitative","scale":{"scheme":"orangered"},"legend":{"title":"Max Temp (°C)"}} }
+    }
+  },
+  { id:"box", name:"BOX PLOT", icon:"⊟⊟",
+    spec: { "$schema":SCHEMA, "title":"Box Plot", "data":{"url":DS+"cars.json"},
+      "mark":{"type":"boxplot","extent":"min-max"},
+      "encoding":{ "x":{"field":"Origin","type":"nominal"}, "y":{"field":"Miles_per_Gallon","type":"quantitative","title":"MPG"} }
+    }
+  },
+  { id:"layer", name:"LAYER", icon:"⧉⧉",
+    spec: { "$schema":SCHEMA, "title":"Bar + Labels (Layered)", "data":{"url":DS+"stocks.csv"},
+      "transform":[{"filter":"datum.symbol === 'GOOG'"}],
+      "encoding":{
+        "x":{"field":"date","timeUnit":"year","type":"ordinal","axis":{"title":"Year"}},
+        "y":{"field":"price","type":"quantitative","aggregate":"mean","axis":{"title":"Mean Price"}}
+      },
+      "layer":[
+        {
+          "mark":{"type":"bar"}
+        },
+        {
+          "mark":{"type":"text","yOffset":-10,"fontWeight":"bold"},
+          "encoding":{
+            "text":{"field":"price","type":"quantitative","aggregate":"mean","format":".0f"},
+            "color":{"value":"#f59e0b"}
+          }
+        }
+      ]
+    }
+  },
+  { id:"facet", name:"FACET", icon:"⊞⊞",
+    spec: { "$schema":SCHEMA, "title":"Faceted Scatter", "data":{"url":DS+"cars.json"},
+      "width": 300, "height": 300,
+      "mark":{"type":"point","filled":true,"opacity":0.7},
+      "encoding":{ "x":{"field":"Horsepower","type":"quantitative"}, "y":{"field":"Miles_per_Gallon","type":"quantitative","title":"MPG"}, "facet":{"field":"Origin","type":"nominal","columns":3} }
+    }
+  },
+  { id:"repeat", name:"REPEAT", icon:"⊡⊡",
+    spec: { "$schema":SCHEMA, "title":"Repeat Matrix", "data":{"url":"https://cdn.jsdelivr.net/npm/vega-datasets@1/data/iris.json"},
+      "repeat":{"row":["petalLength","petalWidth"],"column":["sepalLength","sepalWidth"]},
+      "spec":{ "mark":{"type":"point","filled":true,"size":30,"opacity":0.6},
+        "encoding":{ "x":{"field":{"repeat":"column"},"type":"quantitative"}, "y":{"field":{"repeat":"row"},"type":"quantitative"}, "color":{"field":"species","type":"nominal"} }
+      }
+    }
+  },
+  { id:"slope", name:"SLOPE", icon:"╱╲╱",
+    spec: { "$schema":SCHEMA, "data":{"url":DS+"stocks.csv"},
+      "transform":[
+        {"filter":"datum.symbol === 'AMZN' || datum.symbol === 'MSFT'"},
+        {"timeUnit":"year","field":"date","as":"_yr"},
+        {"aggregate":[{"op":"mean","field":"price","as":"_price"}],"groupby":["symbol","_yr"]}
+      ],
+      "title":{
+        "text":"Stock Price",
+        "fontSize":25,
+        "anchor":"start",
+        "subtitleFontSize":12,
+        "subtitleFontWeight":600,
+        "subtitle":"annual avg price by symbol"
+      },
+      "layer":[
+        {
+          "mark":{"type":"line","interpolate":"bundle","opacity":0.3,"tension":0.3,"strokeWidth":1},
+          "encoding":{
+            "color":{"field":"symbol"},
+            "x":{"field":"_yr","axis":null}
+          }
+        },
+        {
+          "mark":{"type":"line","strokeWidth":3,"strokeCap":"round","interpolate":"bundle","tension":0},
+          "encoding":{}
+        },
+        {
+          "mark":{"type":"text","align":"right","yOffset":-7,"size":12},
+          "encoding":{
+            "text":{"field":"symbol"},
+            "x":{"field":"_yr","aggregate":"median","axis":null}
+          }
+        }
+      ],
+      "encoding":{
+        "y":{"aggregate":{"argmax":"_yr"},"field":"_price","type":"quantitative"},
+        "x":{"field":"_yr","axis":null},
+        "color":{"field":"symbol","type":"nominal","legend":null,"scale":{"range":["#e05252","#5289e0"]}}
+      }
+    }
+  },
+  { id:"donut", name:"DONUT", icon:"◎",
+    spec: { "$schema":SCHEMA, "title":"Population Under 30 · USA 2000", "data":{"url":DS+"population.json"},
+      "transform":[
+        {"filter":"datum.year === 2000"},
+        {"calculate":"datum.age < 30 ? datum.people : 0","as":"_u25"},
+        {"joinaggregate":[{"op":"sum","field":"people","as":"_total"},{"op":"sum","field":"_u25","as":"_under25"}]},
+        {"filter":"datum.age === 0 && datum.sex === 1"},
+        {"calculate":"datum._under25 / datum._total * 100","as":"value"}
+      ],
+      "width":200, "height":200, "view":{"stroke":null},
+      "layer":[
+        {
+          "mark":{"type":"arc","outerRadius":90,"innerRadius":89,"color":"#555555"}
+        },
+        {
+          "mark":{"type":"arc","outerRadius":100,"innerRadius":80},
+          "encoding":{
+            "theta":{"field":"value","type":"quantitative","scale":{"domain":[0,100]}}
+          }
+        },
+        {
+          "transform":[{"calculate":"datum.value / 100","as":"_pct"}],
+          "mark":{"type":"text","radius":0,"size":35,"fontWeight":700},
+          "encoding":{
+            "text":{"field":"_pct","type":"quantitative","aggregate":"sum","format":".0%"},
+            "theta":{"field":"value","type":"quantitative","scale":{"domain":[0,100]}}
+          }
+        }
+      ]
+    }
+  },
+  { id:"kpi", name:"KPI CARD", icon:"▭①",
+    spec: { "$schema":SCHEMA, "data":{"url":DS+"unemployment-across-industries.json"},
+      "transform":[
+        {"filter":"datum.series === 'Construction'"},
+        {"timeUnit":"year","field":"date","as":"_yr"},
+        {"aggregate":[{"op":"mean","field":"rate","as":"_avg"}],"groupby":["_yr"]},
+        {"window":[{"op":"lag","field":"_avg","as":"_prev","param":1}],"sort":[{"field":"_yr"}]},
+        {"calculate":"datum._prev ? (datum._avg - datum._prev) / datum._prev : 0","as":"_yoy"},
+        {"window":[{"op":"rank","as":"_rank"}],"sort":[{"field":"_avg","order":"descending"}]}
+      ],
+      "title":{"text":"Unemployment Rate","subtitle":"Construction","fontSize":25,"subtitleFontSize":14,"anchor":"start"},
+      "width":300,
+      "spacing":8,
+      "vconcat":[
+        {
+          "height":63,
+          "transform":[
+            {"window":[{"op":"row_number","as":"_rn"}],"sort":[{"field":"_yr","order":"descending"}]},
+            {"filter":"datum._rn === 1"}
+          ],
+          "mark":{"type":"text","fontWeight":600,"size":48,"align":"left"},
+          "encoding":{"text":{"field":"_avg","type":"quantitative","format":".1f"}}
+        },
+        {
+          "height":31,
+          "transform":[
+            {"window":[{"op":"row_number","as":"_rn"}],"sort":[{"field":"_yr","order":"descending"}]},
+            {"filter":"datum._rn === 1"},
+            {"calculate":"(datum._yoy >= 0 ? '+' : '') + format(datum._yoy,',.1%') + ' vs PY'","as":"_label"}
+          ],
+          "mark":{"type":"text","align":"left","size":23,"color":{"expr":"datum._yoy >= 0 ? 'green' : 'red'"}},
+          "encoding":{"text":{"field":"_label"}}
+        },
+        {
+          "height":125,
+          "layer":[
+            {"mark":{"type":"line","tooltip":true,"strokeWidth":2}},
+            {"mark":{"type":"point","filled":true,"opacity":1,
+              "size":{"expr":"datum._rank === 1 ? 125 : 0"},
+              "color":{"expr":"datum._rank === 1 ? '#ec7629' : 'transparent'"}
+            }}
+          ],
+          "encoding":{
+            "x":{"field":"_yr","type":"temporal","title":null,"axis":{"format":"%Y","labelAngle":0,"grid":false}},
+            "y":{"field":"_avg","type":"quantitative","title":null,"axis":{"title":null,"grid":false}}
+          }
+        }
+      ]
+    }
+  },
+  { id:"matrix", name:"MATRIX", icon:"⊞", noFit:true,
+    spec: { "$schema":SCHEMA, "title":"Stock Prices 2009", "data":{"url":DS+"stocks.csv"},
+      "transform":[{"filter":"year(datum.date) === 2009"}],
+      "width":{"step":35}, "height":{"step":40},
+      "encoding":{
+        "x":{"field":"date","type":"ordinal","timeUnit":"yearmonth","scale":{"padding":0.05},"title":null,"axis":{"format":"%b","orient":"top"}},
+        "y":{"field":"symbol","type":"ordinal","title":null,"sort":{"field":"symbol","order":"ascending"}}
+      },
+      "layer":[
+        {
+          "mark":{"type":"rect","tooltip":true},
+          "encoding":{
+            "color":{"condition":{"test":{"field":"__selected__","equal":"on"},"value":"#7b516f"},"value":"#e3e3e3"},
+            "opacity":{"condition":{"test":{"field":"__selected__","equal":"off"},"value":0.5},"value":1}
+          }
+        },
+        {
+          "mark":{"type":"text","fontSize":11},
+          "encoding":{
+            "text":{"field":"price","format":",.0f"},
+            "color":{"condition":{"test":{"field":"__selected__","equal":"on"},"value":"white"},"value":"black"}
+          }
+        },
+        {
+          "mark":{"type":"rect","color":"#e3e3e3","xOffset":52},
+          "encoding":{"x":{"field":"date","aggregate":"max"}}
+        },
+        {
+          "mark":{"type":"rect","color":"#e3e3e3","xOffset":104},
+          "encoding":{"x":{"field":"date","aggregate":"max"}}
+        },
+        {
+          "transform":[
+            {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
+            {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
+          ],
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":52,"yOffset":-30,"color":"black"},
+          "encoding":{
+            "text":{"value":"Total"},
+            "x":{"field":"date","aggregate":"max"},
+            "y":{"field":"symbol","type":"ordinal"}
+          }
+        },
+        {
+          "transform":[
+            {"joinaggregate":[{"op":"min","field":"symbol","as":"_hdr_sym"},{"op":"max","field":"date","as":"_hdr_date"}]},
+            {"filter":"datum.symbol === datum._hdr_sym && datum.date === datum._hdr_date"}
+          ],
+          "mark":{"type":"text","fontSize":10,"fontWeight":800,"xOffset":104,"yOffset":-30,"color":"black"},
+          "encoding":{
+            "text":{"value":"Min"},
+            "x":{"field":"date","aggregate":"max"},
+            "y":{"field":"symbol","type":"ordinal"}
+          }
+        },
+        {
+          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":52},
+          "encoding":{
+            "text":{"field":"price","type":"quantitative","aggregate":"sum","format":",.0f"},
+            "x":{"field":"date","aggregate":"max"}
+          }
+        },
+        {
+          "mark":{"type":"text","fontSize":10,"fontWeight":600,"xOffset":104},
+          "encoding":{
+            "text":{"field":"price","type":"quantitative","aggregate":"min","format":",.0f"},
+            "x":{"field":"date","aggregate":"max"}
+          }
+        }
+      ]
+    }
+  },
+  { id:"brush", name:"BRUSH", icon:"▭⟷",
+    spec: { "$schema":SCHEMA, "title":"Brush Filter", "data":{"url":DS+"stocks.csv"},
+      "spacing":40,
+      "vconcat":[
+        {
+          "title":{"text":"Total Price by Symbol","subtitle":"Filtered by the range selected below"},
+          "height":250, "width":500,
+          "transform":[
+            {"filter":{"param":"brush"}},
+            {"aggregate":[{"op":"sum","field":"price","as":"totalPrice"}],"groupby":["symbol"]}
+          ],
+          "layer":[
+            {"mark":{"type":"bar","tooltip":true}},
+            {
+              "mark":{"type":"text","align":"left","xOffset":5},
+              "encoding":{"text":{"field":"totalPrice","type":"quantitative","format":",.0f"}}
+            }
+          ],
+          "encoding":{
+            "x":{"field":"totalPrice","type":"quantitative","axis":null,"stack":null},
+            "y":{"field":"symbol","type":"nominal","sort":"-x","axis":{"title":null}}
+          }
+        },
+        {
+          "title":"Brush to filter by date",
+          "height":120, "width":500,
+          "mark":"bar",
+          "params":[
+            {"name":"brush","select":{"type":"interval","encodings":["x"]}}
+          ],
+          "encoding":{
+            "x":{"field":"date","type":"temporal","timeUnit":"yearmonth","axis":{"title":null}},
+            "y":{"field":"price","type":"quantitative","aggregate":"sum","axis":null}
+          }
+        }
+      ]
+    }
+  },
+  { id:"target", name:"TARGET", icon:"▭─",
+    spec: { "$schema":SCHEMA, "data":{"url":DS+"stocks.csv"},
+      "transform":[
+        {"filter":{"field":"symbol","equal":"GOOG"}},
+        {"calculate":"(430)","as":"_target"}
+      ],
+      "spacing":50,
+      "vconcat":[
+        {
+          "title":{"text":"Average Price vs Target","anchor":"middle"},
+          "width":400, "height":30,
+          "transform":[
+            {"aggregate":[{"op":"mean","field":"price","as":"_avg"}]},
+            {"calculate":"(450)","as":"_target"}
+          ],
+          "layer":[
+            {"mark":{"type":"tick","filled":true,"color":"#454545","size":35,"thickness":1,"opacity":1},
+             "encoding":{"x":{"field":"_target","type":"quantitative","axis":null}}},
+            {"mark":{"type":"rect","color":"#454545","height":1,"yOffset":15},
+             "encoding":{"x":{"field":"_target","type":"quantitative","axis":null}}},
+            {"mark":{"type":"bar","cornerRadius":10,"height":25,
+                     "color":{"expr":"datum._avg < datum._target ? '#ec7629' : '#0c4d25'"}},
+             "encoding":{"x":{"field":"_avg","type":"quantitative","title":null,"axis":null}}},
+            {"mark":{"type":"text","yOffset":-30,"size":14,"fontWeight":600},
+             "encoding":{"text":{"field":"_target","format":",.0f"},
+                         "x":{"field":"_target","type":"quantitative","axis":null}}},
+            {"mark":{"type":"text","size":14,"align":"right","xOffset":-5,
+                     "color":{"expr":"datum._avg < datum._target ? '#ffffff' : '#0c4d25'"}},
+             "encoding":{"text":{"field":"_avg","format":",.0f"},
+                         "x":{"field":"_avg","type":"quantitative","axis":null}}}
+          ]
+        },
+        {
+          "title":{"text":"Monthly Max Price","anchor":"middle","offset":15},
+          "width":400, "height":120,
+          "transform":[{"filter":"isValid(datum.price)"}],
+          "layer":[
+            {"mark":{"type":"line","point":false,"interpolate":"catmull-rom"},
+             "encoding":{
+               "x":{"field":"date","type":"temporal","timeUnit":"year","axis":{"title":null,"grid":false,"ticks":false,"domainWidth":0.2,"domainColor":"#454545"}},
+               "y":{"field":"price","type":"quantitative","aggregate":"max","axis":null}
+             }},
+            {"mark":{"type":"text","fontWeight":600,"size":9,"yOffset":-10},
+             "encoding":{
+               "text":{"field":"price","aggregate":"max","format":",.0f"},
+               "x":{"field":"date","type":"temporal","timeUnit":"year"},
+               "y":{"field":"price","type":"quantitative","aggregate":"max"}
+             }}
+          ]
+        }
+      ]
+    }
+  },
+  { id:"blank", name:"BLANK", icon:"◻",
+    spec: { "$schema":SCHEMA, "title":"My Chart",
+      "data":{"name":"dataset"},
+      "layer":[
+        {
+          "mark":{"type":"bar"},
+          "encoding":{
+            "x":{"field":"x_field","type":"nominal","axis":{"title":"X Axis"}},
+            "y":{"field":"y_field","type":"quantitative","axis":{"title":"Y Axis"}}
+          }
+        }
+      ]
+    }
+  },
+];
+
+// ─────────────────────────────────────────────────────────────
+// MARK CONTROL DEFINITIONS
+// ─────────────────────────────────────────────────────────────
+const MARK_CTRL_DEFS = {
+  _common: [
+    { prop:'color',   label:'Colour',  ctrl:'color',    default:'#00b4d8' },
+    { prop:'opacity', label:'Opacity', ctrl:'range',    min:0, max:1, step:0.05, default:1 },
+  ],
+  bar: [
+    { prop:'cornerRadius', label:'Corner radius', ctrl:'number', min:0, max:30, placeholder:'0' },
+  ],
+  line: [
+    { prop:'strokeWidth', label:'Stroke width', ctrl:'number', min:0.5, max:20, step:0.5, placeholder:'2' },
+    { prop:'strokeDash',  label:'Dash style',   ctrl:'strokedash' },
+    { prop:'point',       label:'Show points',  ctrl:'checkbox', default:false },
+    { prop:'interpolate', label:'Curve',        ctrl:'select',
+      options:['linear','monotone','step','step-before','step-after','basis','cardinal','catmull-rom'] },
+  ],
+  area: [
+    { prop:'strokeWidth', label:'Stroke width', ctrl:'number', min:0, max:20, step:0.5, placeholder:'0' },
+    { prop:'strokeDash',  label:'Dash style',   ctrl:'strokedash' },
+    { prop:'fillOpacity', label:'Fill opacity', ctrl:'range',  min:0, max:1, step:0.05, default:1 },
+    { prop:'interpolate', label:'Curve',        ctrl:'select',
+      options:['linear','monotone','step','step-before','step-after','basis'] },
+  ],
+  point: [
+    { prop:'size',   label:'Size',   ctrl:'number',   min:1, max:1000, placeholder:'30' },
+    { prop:'filled', label:'Filled', ctrl:'checkbox', default:false },
+    { prop:'shape',  label:'Shape',  ctrl:'select',
+      options:['circle','square','cross','diamond','triangle-up','triangle-down','triangle-right','triangle-left','stroke'] },
+  ],
+  circle: [
+    { prop:'size', label:'Size', ctrl:'number', min:1, max:1000, placeholder:'30' },
+  ],
+  square: [
+    { prop:'size', label:'Size', ctrl:'number', min:1, max:1000, placeholder:'30' },
+  ],
+  text: [
+    { prop:'fontSize',   label:'Font size', ctrl:'number', min:0, max:72, placeholder:'11' },
+    { prop:'fontWeight', label:'Weight',    ctrl:'select', options:['normal','bold','300','400','500','600','700'] },
+    { prop:'align',      label:'Align',     ctrl:'select', options:['left','center','right'] },
+    { prop:'baseline',   label:'Baseline',  ctrl:'select', options:['top','middle','bottom','alphabetic','line-top','line-bottom'] },
+    { prop:'xOffset',    label:'Offset X',  ctrl:'number', placeholder:'0' },
+    { prop:'yOffset',    label:'Offset Y',  ctrl:'number', placeholder:'0' },
+  ],
+  rect: [
+    { prop:'cornerRadius', label:'Corner radius', ctrl:'number', min:0, max:30, placeholder:'0' },
+  ],
+  arc: [
+    { prop:'innerRadius', label:'Inner radius', ctrl:'number', min:0, placeholder:'0' },
+    { prop:'outerRadius', label:'Outer radius', ctrl:'number', min:0, placeholder:'auto' },
+    { prop:'padAngle',    label:'Pad angle',    ctrl:'number', min:0, max:0.5, step:0.01, placeholder:'0' },
+  ],
+  tick: [
+    { prop:'thickness', label:'Thickness', ctrl:'number', min:1, max:20, placeholder:'1' },
+    { prop:'bandSize',  label:'Band size', ctrl:'number', min:0, max:50, placeholder:'auto' },
+  ],
+  rule:      [
+    { prop:'strokeWidth', label:'Stroke width', ctrl:'number', min:0.5, max:20, step:0.5, placeholder:'1' },
+    { prop:'strokeDash',  label:'Dash style',   ctrl:'strokedash' },
+  ],
+  boxplot:   [],
+  errorband: [],
+  errorbar:  [],
+  geoshape:  [],
+  trail:     [
+    { prop:'strokeWidth', label:'Stroke width', ctrl:'number', min:0.5, max:20, step:0.5, placeholder:'2' },
+    { prop:'strokeDash',  label:'Dash style',   ctrl:'strokedash' },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let userData = null;
+let _cachedRawFields = [];  // full raw field list from URL fetch or uploaded data
+let _cachedRawRows   = [];  // full raw rows (used for distinct-value pickers)
+let activeTemplateId = null;
+const templateCache = {};  // { templateId: specJSON } — preserves edits across template switches
+let embedResult = null;
+let renderTimer = null;
+let pasteFormat = 'csv';
+let fitState = { active: false, width: null, height: null };
+let suppressRender = false;
+let liveMode = true;
+let activeEditorView = 'spec'; // 'spec' | 'config'
+let specBuffer  = '';
+let activeConfigId = 'warm-sand';
+let configBuffer = JSON.stringify(CONFIGS.find(c => c.id === 'warm-sand').cfg, null, 2);
+let isLightMode = true;
+let selectedLayerIdx = 0;
+let selectedConcatIdx = 0;
+let _lastMarkSig = '';
+let _lastAxisSig  = '';
+
+// ─────────────────────────────────────────────────────────────
+// SHARED HELPERS
+// ─────────────────────────────────────────────────────────────
+function _syncSpecFromEditor() {
+  if (activeEditorView === 'spec') specBuffer = cmEditor.getValue();
+  else configBuffer = cmEditor.getValue();
+}
+
+function _getActiveConfig() {
+  return CONFIGS.find(c => c.id === activeConfigId) || CONFIGS[0];
+}
+
+function _updateEditorAndRender(spec, liveOnly) {
+  const oldText = cmEditor.getValue();
+  specBuffer = JSON.stringify(spec, null, 2);
+  _clearPatchHighlight();
+  suppressRender = true;
+  cmEditor.setValue(specBuffer);
+  suppressRender = false;
+  _applyPatchHighlight(oldText, specBuffer);
+  if (liveOnly) { if (liveMode) renderSpec(); else dot('idle'); }
+  else renderSpec();
+}
+
+function _liftFacetIfNeeded(spec, target) {
+  if (target.encoding && target.encoding.facet && target.layer && !(spec.facet && spec.spec)) {
+    const facetDef = target.encoding.facet;
+    const colsNum  = facetDef.columns != null ? facetDef.columns : null;
+    const onlyFacetField = { field: facetDef.field };
+    if (facetDef.type) onlyFacetField.type = facetDef.type;
+    delete target.encoding.facet;
+    if (Object.keys(target.encoding).length === 0) delete target.encoding;
+    _wrapAsOuterFacet(spec, onlyFacetField);
+    if (colsNum != null) spec.columns = colsNum;
+  }
+}
+
+function _isHlTransform(t) {
+  return t.joinaggregate?.some(j => j.as?.startsWith('_hl_')) || t.as === '_hl_cat' || t.filter?.includes('_hl_cat');
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOM
+// ─────────────────────────────────────────────────────────────
+let cmEditor = null;  // CodeMirror instance
+const errorBar   = document.getElementById('error-bar');
+const statusDot  = document.getElementById('status-dot');
+const vegaBox    = document.getElementById('vega-container');
+const fieldList  = document.getElementById('field-list');
+const fieldsSec  = document.getElementById('fields-section');
+const rowLabel   = document.getElementById('row-label');
+const pasteModal = document.getElementById('paste-modal');
+const pasteArea  = document.getElementById('paste-area');
+const dataGridWrap = document.getElementById('data-grid-wrap');
+const dbInfo     = document.getElementById('db-info');
+const dbBadge    = document.getElementById('db-badge');
+
+// ─────────────────────────────────────────────────────────────
+// TAB SWITCHING
+// ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  const isData = name === 'data';
+  document.getElementById('tab-btn-data').classList.toggle('active', isData);
+  // Only highlight spec/config buttons when the editor panel is visible
+  document.getElementById('tab-btn-spec').classList.toggle('active', !isData && activeEditorView === 'spec');
+  document.getElementById('tab-btn-config').classList.toggle('active', !isData && activeEditorView === 'config');
+  document.querySelectorAll('.tab-actions').forEach(a => {
+    let show = false;
+    if (isData)   show = a.id === 'tab-actions-data';
+    else          show = a.id === 'tab-actions-spec';
+    a.classList.toggle('hidden', !show);
+  });
+  // Hide + LAYER in config view (doesn't apply to config JSON)
+  document.getElementById('add-layer-wrap').style.display =
+    (!isData && activeEditorView === 'config') ? 'none' : '';
+  document.getElementById('tab-data').classList.toggle('hidden', !isData);
+  document.getElementById('tab-spec').classList.toggle('hidden', isData);
+  if (!isData && cmEditor) setTimeout(() => cmEditor.refresh(), 0);
+}
+
+function switchEditorView(view) {
+  // Save current CM content to whichever buffer is active
+  _syncSpecFromEditor();
+
+  activeEditorView = view;
+
+  // Update tab button highlights (data tab stays independent)
+  document.getElementById('tab-btn-spec').classList.toggle('active', view === 'spec');
+  document.getElementById('tab-btn-config').classList.toggle('active', view === 'config');
+
+  // Show correct toolbar actions — spec toolbar stays visible for both spec and config views
+  document.getElementById('tab-actions-spec').classList.remove('hidden');
+  document.getElementById('tab-actions-config').classList.add('hidden');
+  // Hide + LAYER in config view (not applicable to config JSON)
+  document.getElementById('add-layer-wrap').style.display = view === 'config' ? 'none' : '';
+
+  // Load the target buffer into CM without triggering a render
+  suppressRender = true;
+  cmEditor.setValue(view === 'spec' ? specBuffer : configBuffer);
+  suppressRender = false;
+
+  // Show the correct properties panel
+  const isConfig = view === 'config';
+  document.getElementById('props-body').style.display        = isConfig ? 'none' : '';
+  document.getElementById('config-props-body').style.display = isConfig ? ''     : 'none';
+  if (isConfig) syncConfigProps();
+
+  // Make sure the spec panel is visible
+  switchTab('spec');
+}
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildTemplateRail();
+  buildSampleChips();
+  initCM();
+  initResizers();
+  bindEvents();
+  // Apply default light mode
+  document.body.classList.add('light-mode');
+  document.getElementById('btn-theme-toggle').textContent = '🌙 DARK';
+  // Clear properties-panel patch highlights on any click
+  document.addEventListener('mousedown', () => _clearPatchHighlight());
+  // Load spec from URL hash if present, otherwise default template
+  if (!loadSpecFromHash()) {
+    applyTemplate(TEMPLATES[0]); // bar default
+    // Activate fit after first render settles
+    setTimeout(fitToFrame, 600);
+  }
+});
+
+function initCM() {
+  cmEditor = CodeMirror(document.getElementById('spec-editor-wrap'), {
+    mode: { name: 'javascript', json: true },
+    lineNumbers: true,
+    lineWrapping: false,
+    foldGutter: true,
+    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter', 'CodeMirror-error-gutter'],
+    matchBrackets: true,
+    indentUnit: 2,
+    tabSize: 2,
+    electricChars: false,
+    extraKeys: {
+      'Tab':   cm => { if (isState.visible) commitIS(isState.items[isState.activeIdx]); else cm.execCommand('insertSoftTab'); },
+      'Enter': cm => { if (isState.visible) commitIS(isState.items[isState.activeIdx]); else cm.execCommand('newlineAndIndent'); },
+      'Esc':   ()  => { if (isState.visible) hideIS(); },
+      'Down':  cm  => { if (isState.visible) { isNavigatingIS = true; const n = Math.min(isState.items.length,20); isState.activeIdx=(isState.activeIdx+1)%n; renderIS(); setTimeout(()=>{isNavigatingIS=false;},0); } else cm.execCommand('goLineDown'); },
+      'Up':    cm  => { if (isState.visible) { isNavigatingIS = true; const n = Math.min(isState.items.length,20); isState.activeIdx=(isState.activeIdx-1+n)%n; renderIS(); setTimeout(()=>{isNavigatingIS=false;},0); } else cm.execCommand('goLineUp'); },
+
+    }
+  });
+  cmEditor.on('change', () => {
+    if (suppressRender) return;
+    // Keep active buffer in sync
+    _syncSpecFromEditor();
+    checkIntellisense();
+    if (!liveMode) { dot('idle'); return; }
+    clearTimeout(renderTimer);
+    dot('spin');
+    renderTimer = setTimeout(renderSpec, 950);
+  });
+  cmEditor.on('cursorActivity', () => {
+    if (isNavigatingIS) return;
+    checkIntellisense();
+    if (isState.visible) positionIS();
+  });
+  cmEditor.on('blur',   () => setTimeout(hideIS, 160));
+  cmEditor.on('scroll', () => { if (isState.visible) positionIS(); });
+
+  // Double-click on a populated "field" value → show ALL dataset fields (not just matching ones)
+  cmEditor.getWrapperElement().addEventListener('dblclick', () => {
+    if (!userData?.length) return;
+    setTimeout(() => {
+      const cursor = cmEditor.getCursor();
+      const pos    = cmEditor.indexFromPos(cursor);
+      const val    = cmEditor.getValue();
+      const before = val.slice(0, pos);
+      const after  = val.slice(pos);
+      const m = before.match(/"field"\s*:\s*"([^"]*)$/);
+      if (!m) return;
+      const trail = (after.match(/^([^"]*)/) || [])[1] || '';
+      isState = {
+        visible: true, mode: IS_MODES[0],
+        items: Object.keys(userData[0]),
+        activeIdx: 0, query: '',
+        insertStart: pos - m[1].length,
+        insertEnd:   pos + trail.length
+      };
+      renderIS();
+      positionIS();
+    }, 0);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// RESIZERS
+// ─────────────────────────────────────────────────────────────
+function initResizers() {
+  const workspace    = document.querySelector('.workspace');
+  const leftPanel    = document.querySelector('.left-panel');
+  const previewPanel = document.getElementById('preview-panel');
+  const vResizer     = document.getElementById('resizer-v');
+  const hResizer     = document.getElementById('resizer-h');
+  const dataBottom   = document.getElementById('data-bottom');
+
+  // ── Vertical (left ↔ right panels) ──
+  let vDragging = false, vStartX = 0, vStartW = 0;
+
+  vResizer.addEventListener('mousedown', e => {
+    vDragging = true;
+    vStartX   = e.clientX;
+    vStartW   = leftPanel.getBoundingClientRect().width;
+    vResizer.classList.add('dragging');
+    document.body.style.cssText += ';cursor:col-resize!important;user-select:none!important';
+    e.preventDefault();
+  });
+
+  // ── Horizontal (preview ↕ data table) ──
+  let hDragging = false, hStartY = 0, hStartH = 0;
+
+  hResizer.addEventListener('mousedown', e => {
+    hDragging = true;
+    hStartY   = e.clientY;
+    hStartH   = dataBottom.getBoundingClientRect().height;
+    hResizer.classList.add('dragging');
+    document.body.style.cssText += ';cursor:row-resize!important;user-select:none!important';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (vDragging) {
+      const total = workspace.getBoundingClientRect().width;
+      const rw    = vResizer.getBoundingClientRect().width;
+      const newW  = Math.max(200, Math.min(total - rw - 200, vStartW + (e.clientX - vStartX)));
+      leftPanel.style.width = newW + 'px';
+      if (cmEditor) cmEditor.refresh();
+    }
+    if (hDragging) {
+      const panelH = previewPanel.getBoundingClientRect().height;
+      const delta  = hStartY - e.clientY;          // drag up = bigger table
+      const newH   = Math.max(60, Math.min(panelH - 120, hStartH + delta));
+      dataBottom.style.height = newH + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (vDragging) {
+      vDragging = false;
+      vResizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (cmEditor) cmEditor.refresh();
+    }
+    if (hDragging) {
+      hDragging = false;
+      hResizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// ZOOM — PREVIEW
+// ─────────────────────────────────────────────────────────────
+const PVZ_STEPS = [0.25,0.33,0.5,0.67,0.75,0.9,1.0,1.1,1.25,1.5,1.75,2.0,2.5,3.0,4.0];
+let previewZoomIdx = 6; // 1.0
+
+function setPreviewZoom(idx) {
+  previewZoomIdx = Math.max(0, Math.min(PVZ_STEPS.length - 1, idx));
+  const z = PVZ_STEPS[previewZoomIdx];
+  document.getElementById('preview-zoom-wrap').style.zoom = z;
+  document.getElementById('pvz-label').textContent = Math.round(z * 100) + '%';
+  // Deactivate fit mode — user has manually overridden the zoom
+  deactivateFit();
+}
+
+// ─────────────────────────────────────────────────────────────
+// ZOOM — CODE EDITOR
+// ─────────────────────────────────────────────────────────────
+const EDZ_SIZES = [9,10,11,12,13,14,15,16,17,18,20,22,24,28];
+let codeZoomIdx = 5; // 14px
+
+function setCodeZoom(idx) {
+  codeZoomIdx = Math.max(0, Math.min(EDZ_SIZES.length - 1, idx));
+  const sz = EDZ_SIZES[codeZoomIdx];
+  document.getElementById('edz-label').textContent = sz + 'px';
+  if (cmEditor) {
+    // Target the .CodeMirror element directly — its font-size CSS is now un-!important
+    const el = cmEditor.getWrapperElement();
+    el.style.fontSize = sz + 'px';
+    // Force CM to recalculate line heights and gutter positions
+    cmEditor.refresh();
+    // Second refresh needed after layout reflow settles
+    setTimeout(() => cmEditor.refresh(), 50);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ZOOM — DATA TABLE
+// ─────────────────────────────────────────────────────────────
+const DTZ_SIZES = [9,10,11,12,13,14,15,16,17,18,20,22,24,28];
+let dataZoomIdx = 3; // 12px
+
+function setDataZoom(idx) {
+  dataZoomIdx = Math.max(0, Math.min(DTZ_SIZES.length - 1, idx));
+  const sz = DTZ_SIZES[dataZoomIdx];
+  document.getElementById('dtz-label').textContent = sz + 'px';
+  const tbl = document.querySelector('#data-grid-wrap .full-tbl');
+  if (tbl) tbl.style.fontSize = sz + 'px';
+  // Store as CSS var so future table renders also inherit it
+  document.documentElement.style.setProperty('--tbl-font-size', sz + 'px');
+}
+function deactivateFit() {
+  fitState.active = false;
+  document.getElementById('btn-fit').classList.remove('btn-primary');
+  document.getElementById('pp-width').disabled  = false;
+  document.getElementById('pp-height').disabled = false;
+}
+// ─────────────────────────────────────────────────────────────
+async function fitToFrame() {
+  const previewTop = document.getElementById('preview-top');
+
+  // Reset any manual zoom so the chart fills the frame correctly
+  previewZoomIdx = 6; // 100%
+  document.getElementById('preview-zoom-wrap').style.zoom = 1;
+  document.getElementById('pvz-label').textContent = '100%';
+
+  const availW = previewTop.clientWidth  - 40;
+  const availH = previewTop.clientHeight - 40;
+  const plotW  = Math.max(80,  availW - 100); // subtract y-axis + legend overhead
+  const plotH  = Math.max(60,  availH - 110); // subtract title + x-axis overhead
+
+  const txt = specBuffer.trim();
+  if (!txt) return;
+  let spec;
+  try { spec = JSON.parse(txt); }
+  catch(e) { err("Spec: " + e.message); return; }
+
+  const isMulti = !!(spec.hconcat || spec.vconcat || spec.concat || spec.facet || spec.repeat);
+
+  // Save fit state so subsequent re-renders also use these dimensions
+  fitState = {
+    active: true,
+    width:  isMulti ? availW : plotW,
+    height: isMulti ? null   : plotH,
+    isMulti
+  };
+
+  // Show FIT button as active and disable manual dimension inputs
+  document.getElementById('btn-fit').classList.add('btn-primary');
+  document.getElementById('pp-width').disabled  = true;
+  document.getElementById('pp-height').disabled = true;
+
+  let rs = JSON.parse(JSON.stringify(spec));
+  if (userData && rs.data && rs.data.name === 'dataset') rs.data = { values: userData };
+  const activeFitCfg = _getActiveConfig();
+  rs.config = activeFitCfg.cfg;
+
+  rs.width = fitState.width;
+  if (!isMulti) {
+    rs.height   = fitState.height;
+    rs.autosize = { type: 'fit', contains: 'padding', resize: true };
+  }
+
+  try {
+    dot('spin');
+    if (embedResult) { try { embedResult.finalize(); } catch(_){} embedResult = null; }
+    vegaBox.innerHTML = '';
+    const result = await vegaEmbed('#vega-container', rs, {
+      renderer: 'svg',
+      actions: false,
+    });
+    embedResult = result;
+    clearErr();
+    dot('ok');
+  } catch(e) { err("Render: " + e.message); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONSOLE MESSAGES
+// ─────────────────────────────────────────────────────────────
+(function interceptConsole() {
+  const _warn = console.warn.bind(console);
+  console.warn = (...args) => {
+    _warn(...args);
+    addConsoleMsg(args.join(' '));
+  };
+})();
+
+function addConsoleMsg(text) {
+  // Filter to Vega/render related messages only
+  if (!text.includes('WARN') && !text.includes('vega') && !text.includes('Vega')) return;
+  const panel    = document.getElementById('console-panel');
+  const messages = document.getElementById('console-messages');
+  if (!panel || !messages) return;
+  const el = document.createElement('div');
+  el.className = 'console-msg';
+  el.innerHTML = `<span class="console-msg-icon">⚠</span><span class="console-msg-text">${text.replace(/</g,'&lt;')}</span>`;
+  messages.appendChild(el);
+  panel.classList.add('has-messages');
+  // Auto-scroll to latest
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function clearConsole() {
+  const panel    = document.getElementById('console-panel');
+  const messages = document.getElementById('console-messages');
+  if (messages) messages.innerHTML = '';
+  if (panel)    panel.classList.remove('has-messages');
+}
+// ─────────────────────────────────────────────────────────────
+function duplicateLayer(layerIdx, concatIdx) {
+  _syncSpecFromEditor();
+
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+
+  // When outer-faceted, layers live inside spec.spec.
+  let target = _viewSpec(spec);
+  if (concatIdx !== null) {
+    const vs = target.vconcat || target.hconcat || target.concat;
+    if (vs?.[concatIdx]) target = vs[concatIdx];
+  }
+
+  if (target.layer && layerIdx !== null) {
+    const srcLayer = target.layer[layerIdx];
+    const copy = JSON.parse(JSON.stringify(srcLayer));
+    // Strip HL-specific colour/size encodings from the copy so it starts clean
+    if (copy.encoding?.color?.field === '_hl_cat' || copy.encoding?.color?.field === '_hl_txt_cat') delete copy.encoding.color;
+    if (copy.encoding?.size?.condition?.some?.(c => c.test?.includes('_hl_cat') || c.test?.includes('_hl_txt_cat'))) delete copy.encoding.size;
+    if (copy.transform) { copy.transform = copy.transform.filter(t => t.as !== '_hl_txt_cat'); if (!copy.transform.length) delete copy.transform; }
+    delete copy.name; // remove _hl_layer name if somehow copied
+    target.layer.push(copy);
+    selectedLayerIdx = target.layer.length - 1;
+  } else if (!target.layer) {
+    // Flat spec — wrap into layers, same pattern as addLayer().
+    // Transforms stay at root so filters run BEFORE the HL joinaggregate
+    // (otherwise _hl_max is computed on unfiltered data and highlights the
+    //  wrong row after duplication).
+    const firstLayer = {};
+    ['mark', 'selection', 'params'].forEach(k => {
+      if (target[k] !== undefined) { firstLayer[k] = target[k]; delete target[k]; }
+    });
+    if (target.encoding?.color?.field === '_hl_cat') {
+      firstLayer.encoding = firstLayer.encoding || {};
+      firstLayer.encoding.color = target.encoding.color;
+      delete target.encoding.color;
+    }
+    // Duplicate: copy of firstLayer with HL stripped
+    const copy = JSON.parse(JSON.stringify(firstLayer));
+    if (copy.encoding?.color?.field === '_hl_cat' || copy.encoding?.color?.field === '_hl_txt_cat') delete copy.encoding.color;
+    if (copy.encoding?.size?.condition?.some?.(c => c.test?.includes('_hl_cat') || c.test?.includes('_hl_txt_cat'))) delete copy.encoding.size;
+    if (copy.transform) { copy.transform = copy.transform.filter(t => t.as !== '_hl_txt_cat'); if (!copy.transform.length) delete copy.transform; }
+    target.layer = [firstLayer, copy];
+    selectedLayerIdx = 1;
+  }
+
+  _liftFacetIfNeeded(spec, target);
+
+  _updateEditorAndRender(spec);
+}
+
+// ─────────────────────────────────────────────────────────────
+const LAYER_TEMPLATES = {
+  text: {
+    mark: { type: "text", fontSize: 11, align: "center" },
+    encoding: { text: { type: "quantitative", format: ",.0f" } }
+  },
+  bar: {
+    mark: { type: "bar" },
+    encoding: {}
+  },
+  line: {
+    mark: { type: "line", strokeWidth: 2 },
+    encoding: {}
+  },
+  point: {
+    mark: { type: "point", filled: true, size: 60 },
+    encoding: {}
+  },
+  rule: {
+    mark: { type: "rule", strokeWidth: 1, strokeDash: [4, 4] },
+    encoding: {}
+  }
+};
+
+function deleteLayer(layerIdx, concatIdx) {
+  _syncSpecFromEditor();
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+
+  let target = _viewSpec(spec);
+  if (concatIdx !== null) {
+    const vs = target.vconcat || target.hconcat || target.concat;
+    if (vs?.[concatIdx]) target = vs[concatIdx];
+  }
+
+  if (!target.layer || target.layer.length <= 1 || layerIdx === null) return;
+
+  // Remove HL state that referenced this layer before deleting it
+  _removeHlFromSpec(target);
+
+  target.layer.splice(layerIdx, 1);
+
+  // If only one layer remains, unwrap back to a flat spec
+  if (target.layer.length === 1) {
+    const sole = target.layer[0];
+    delete target.layer;
+    ['mark', 'selection', 'params'].forEach(k => {
+      if (sole[k] !== undefined) target[k] = sole[k];
+    });
+    // Merge the sole layer's encoding into root encoding
+    if (sole.encoding) {
+      target.encoding = target.encoding || {};
+      Object.assign(target.encoding, sole.encoding);
+    }
+    // Merge any per-layer transforms into root
+    if (sole.transform) {
+      target.transform = [...(target.transform || []), ...sole.transform];
+    }
+  }
+
+  selectedLayerIdx = Math.min(selectedLayerIdx, (target.layer ? target.layer.length : 1) - 1);
+
+  _updateEditorAndRender(spec);
+}
+
+function addLayer(type) {
+  _syncSpecFromEditor();
+
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+
+  // When outer-faceted, mark/layer/encoding live inside spec.spec.
+  const target = _viewSpec(spec);
+
+  const template = JSON.parse(JSON.stringify(LAYER_TEMPLATES[type] || LAYER_TEMPLATES.point));
+
+  if (target.layer) {
+    // Already layered — append the new template layer.
+    // Copy non-hl transforms from the first non-hl layer so data filters
+    // (e.g. datum.symbol === 'GOOG') apply to the new layer too.
+    const srcLayer = target.layer.find(l => l.name !== '_hl_layer');
+    const inheritedTransforms = (srcLayer?.transform || []).filter(t => !_isHlTransform(t));
+    if (inheritedTransforms.length) {
+      template.transform = [...inheritedTransforms, ...(template.transform || [])];
+    }
+    target.layer.push(template);
+  } else {
+    // Convert flat spec: pull mark-level keys into the first layer; encoding stays top-level
+    const firstLayer = {};
+    ['mark', 'selection', 'params'].forEach(k => {
+      if (target[k] !== undefined) { firstLayer[k] = target[k]; delete target[k]; }
+    });
+    // All transforms (filters + _hl_*) stay at root so:
+    //   - _hl_cat fields are readable by every layer
+    //   - filters run BEFORE the HL joinaggregate so _hl_max is computed on
+    //     filtered data (not the full dataset)
+    // If the root colour encoding references _hl_cat, move it to layer 0 only —
+    // otherwise text/rule layers inherit it and fail to resolve the field.
+    if (target.encoding?.color?.field === '_hl_cat') {
+      firstLayer.encoding = firstLayer.encoding || {};
+      firstLayer.encoding.color = target.encoding.color;
+      delete target.encoding.color;
+    }
+    target.layer = [firstLayer, template];
+  }
+
+  // If a text layer was just added and line-style highlight is active, immediately apply
+  // the filter + default colour/size encodings so only max/min labels are shown.
+  if (type === 'text') {
+    const newLayerIdx = target.layer.length - 1;
+    const hlSt = _readHlState(target);
+    if (hlSt.active) {
+      const _hlDefs = _hlDefaultColors();
+      _applyTextHlToSpec(target, newLayerIdx, _hlDefs.maxColor, 13, _hlDefs.minColor, 13);
+    }
+  }
+
+  _liftFacetIfNeeded(spec, target);
+
+  _updateEditorAndRender(spec);
+}
+
+// ─── Share feedback helper ────────────────────────────────────
+let _shareFbTimer = null;
+function showShareFeedback(msg, color = 'var(--green)', duration = 2200) {
+  const btn = document.getElementById('btn-share-options');
+  if (!btn) return;
+  if (_shareFbTimer) clearTimeout(_shareFbTimer);
+  btn.innerHTML = msg;
+  btn.style.borderColor = color;
+  btn.style.color       = color;
+  btn.disabled = true;
+  _shareFbTimer = setTimeout(() => {
+    btn.innerHTML     = '⬡ SHARE ▾';
+    btn.style.borderColor = '';
+    btn.style.color       = '';
+    btn.disabled = false;
+    _shareFbTimer = null;
+  }, duration);
+}
+
+// ─── SVG → PNG blob helper (shared by copy-image and save-png) ─
+function _svgToPngBlob(svgEl, bgColor, scale = 2) {
+  return new Promise((resolve, reject) => {
+    const w = svgEl.viewBox.baseVal.width  || svgEl.clientWidth;
+    const h = svgEl.viewBox.baseVal.height || svgEl.clientHeight;
+    const svgStr  = new XMLSerializer().serializeToString(svgEl);
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url     = URL.createObjectURL(svgBlob);
+    const img     = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas blob failed')), 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+    img.src = url;
+  });
+}
+
+function shareSpec() {
+  _syncSpecFromEditor();
+  let spec, config;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+  try { config = JSON.parse(configBuffer); } catch(e) { err("Config: " + e.message); return; }
+  const combined = JSON.stringify({ ...spec, config }, null, 2);
+  navigator.clipboard.writeText(combined)
+    .then(() => showShareFeedback('✓ SPEC COPIED!'))
+    .catch(() => { prompt('Copy your Vega-Lite spec:', combined); });
+}
+
+function toggleStudioTheme() {
+  isLightMode = !isLightMode;
+  document.body.classList.toggle('light-mode', isLightMode);
+  const btn = document.getElementById('btn-theme-toggle');
+  btn.textContent = isLightMode ? '🌙 DARK' : '☀ LIGHT';
+  if (cmEditor) cmEditor.refresh();
+}
+
+function shareVisual() {
+  _syncSpecFromEditor();
+  let spec, config;
+  try { spec    = JSON.parse(specBuffer);   } catch(e) { err("Spec: "   + e.message); return; }
+  try { config  = JSON.parse(configBuffer); } catch(e) { err("Config: " + e.message); return; }
+  // When FIT is active, strip fixed dimensions so the viewer auto-fills the browser.
+  // When FIT is off, the spec's own width/height are preserved for exact sizing.
+  const shareSpec = { ...spec, config };
+  if (fitState.active) { delete shareSpec.width; delete shareSpec.height; }
+  const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(shareSpec));
+  const longUrl = `${new URL('viewer.html', location.href)}#spec=${encoded}${isLightMode ? '&light=1' : ''}&theme=${activeConfigId}`;
+  navigator.clipboard.writeText(longUrl)
+    .then(() => showShareFeedback('✓ LINK COPIED!'))
+    .catch(() => { prompt('Copy your share link:', longUrl); });
+}
+
+function _chartBg() {
+  return ((_getActiveConfig()).cfg.background) || '#000000';
+}
+
+async function copyChartImage() {
+  const svgEl = document.querySelector('#vega-container svg');
+  if (!embedResult || !svgEl) { showShareFeedback('⚠ NO CHART', 'var(--red)', 2000); return; }
+  showShareFeedback('… COPYING', 'var(--dim)', 30000);
+  try {
+    const blob = await _svgToPngBlob(svgEl, _chartBg());
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    showShareFeedback('✓ IMAGE COPIED!');
+  } catch(e) {
+    showShareFeedback('⚠ COPY FAILED', 'var(--red)', 2500);
+  }
+}
+
+async function savePng() {
+  const svgEl = document.querySelector('#vega-container svg');
+  if (!embedResult || !svgEl) { showShareFeedback('⚠ NO CHART', 'var(--red)', 2000); return; }
+  showShareFeedback('… SAVING', 'var(--dim)', 30000);
+  try {
+    const blob = await _svgToPngBlob(svgEl, _chartBg());
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'chart.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showShareFeedback('✓ PNG SAVED!');
+  } catch(e) {
+    showShareFeedback('⚠ SAVE FAILED', 'var(--red)', 2500);
+  }
+}
+
+function saveSvg() {
+  const svgEl = document.querySelector('#vega-container svg');
+  if (!svgEl) { showShareFeedback('⚠ NO CHART', 'var(--red)', 2000); return; }
+  const blob = new Blob([new XMLSerializer().serializeToString(svgEl)], { type: 'image/svg+xml;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'chart.svg';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showShareFeedback('✓ SVG SAVED!');
+}
+
+function openInVegaEditor() {
+  _syncSpecFromEditor();
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+  const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(spec, null, 2));
+  window.open(`https://vega.github.io/editor/#/url/vega-lite/${encoded}`, '_blank');
+}
+
+// ─── Code viewer modal helpers ────────────────────────────────
+let _codeViewerEmbed = null;
+let _codeViewerConfigJson = null;
+function showCodeViewer(title, code, renderSpec, renderMode, configJson) {
+  document.getElementById('code-viewer-title').textContent = title;
+  document.getElementById('code-viewer-pre').textContent = code;
+  document.getElementById('btn-code-copy').textContent = configJson ? 'COPY SPEC' : 'COPY CODE';
+  const cfgBtn = document.getElementById('btn-code-copy-config');
+  if (configJson) { cfgBtn.classList.remove('hidden'); _codeViewerConfigJson = configJson; }
+  else { cfgBtn.classList.add('hidden'); _codeViewerConfigJson = null; }
+  const previewEl = document.getElementById('code-viewer-preview');
+  previewEl.innerHTML = '';
+  previewEl.style.background = '';
+  if (_codeViewerEmbed) { try { _codeViewerEmbed.finalize(); } catch(_){} _codeViewerEmbed = null; }
+
+  if (renderSpec) {
+    const bg = renderSpec.config?.background || renderSpec.background || '#ffffff';
+    previewEl.style.background = bg;
+    const container = document.createElement('div');
+    previewEl.appendChild(container);
+    vegaEmbed(container, renderSpec, {
+      renderer: 'svg', actions: false, mode: renderMode || 'vega-lite'
+    }).then(r => { _codeViewerEmbed = r; }).catch(() => {});
+  }
+  document.getElementById('code-viewer-modal').classList.remove('hidden');
+}
+
+function _getSpecAndConfig() {
+  _syncSpecFromEditor();
+  let spec, config;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return null; }
+  try { config = JSON.parse(configBuffer); } catch(e) { err("Config: " + e.message); return null; }
+  return { spec, config };
+}
+
+function viewAsVega() {
+  const parsed = _getSpecAndConfig();
+  if (!parsed) return;
+  const vlSpec = { ...parsed.spec, config: parsed.config };
+  try {
+    const compiled = vegaLite.compile(vlSpec);
+    showCodeViewer('VEGA SPEC', JSON.stringify(compiled.spec, null, 2), compiled.spec, 'vega');
+  } catch(e) {
+    err("Compile: " + e.message);
+  }
+}
+
+function viewAsDeneb() {
+  const parsed = _getSpecAndConfig();
+  if (!parsed) return;
+  const denebSpec = { ...parsed.spec };
+  delete denebSpec.$schema;
+  delete denebSpec.config;
+  if (denebSpec.data && denebSpec.data.url) {
+    denebSpec.data = { name: "dataset" };
+  } else if (denebSpec.data && denebSpec.data.values) {
+    denebSpec.data = { name: "dataset" };
+  }
+  if (Array.isArray(denebSpec.layer)) {
+    denebSpec.layer.forEach(l => {
+      if (l.data && (l.data.url || l.data.values)) l.data = { name: "dataset" };
+    });
+  }
+  const configJson = JSON.stringify(parsed.config, null, 2);
+  const renderSpec = { ...parsed.spec, config: parsed.config };
+  showCodeViewer('DENEB SPEC', JSON.stringify(denebSpec, null, 2), renderSpec, 'vega-lite', configJson);
+}
+
+// ─── PRESENTATION MODE ────────────────────────────────────────
+const _present = {
+  steps: [],
+  current: 0,
+  playing: false,
+  timer: null,
+  embedA: null,
+  embedB: null,
+  activeLayer: 'a',
+  interval: 3000,
+};
+
+function _captureStep() {
+  _syncSpecFromEditor();
+  let spec, config;
+  try { spec = JSON.parse(specBuffer); } catch(e) { err("Spec: " + e.message); return; }
+  try { config = JSON.parse(configBuffer); } catch(e) { err("Config: " + e.message); return; }
+  _present.steps.push({
+    name: `Step ${_present.steps.length + 1}`,
+    spec: JSON.parse(JSON.stringify(spec)),
+    config: JSON.parse(JSON.stringify(config)),
+  });
+  const n = _present.steps.length;
+  const badge = document.getElementById('capture-count');
+  badge.textContent = n;
+  badge.classList.remove('hidden');
+  showShareFeedback(`✓ Step ${n} captured`, 'var(--accent)', 1500);
+}
+
+function _presentGetSpec(stepIndex) {
+  const step = _present.steps[stepIndex];
+  if (!step) return null;
+  const wrap = document.getElementById('present-chart-inner');
+  const w = wrap.clientWidth - 64;
+  const h = wrap.clientHeight - 64;
+  return { ...step.spec, config: step.config, width: w, height: h, autosize: { type: 'fit', contains: 'padding' } };
+}
+
+async function _presentRender(stepIndex, animate) {
+  const spec = _presentGetSpec(stepIndex);
+  if (!spec) return;
+  const bg = spec.config?.background || spec.background || getComputedStyle(document.body).getPropertyValue('--bg').trim();
+  document.getElementById('present-overlay').style.background = bg;
+
+  if (!animate) {
+    const layerEl = document.getElementById('present-chart-a');
+    layerEl.innerHTML = '';
+    layerEl.style.background = bg;
+    layerEl.className = 'present-chart-layer front';
+    document.getElementById('present-chart-b').className = 'present-chart-layer behind';
+    if (_present.embedA) { try { _present.embedA.finalize(); } catch(_){} }
+    if (_present.embedB) { try { _present.embedB.finalize(); } catch(_){} }
+    _present.embedA = null; _present.embedB = null;
+    try {
+      const r = await vegaEmbed(layerEl, spec, { renderer: 'svg', actions: false });
+      _present.embedA = r;
+    } catch(_) {}
+    _present.activeLayer = 'a';
+  } else {
+    const nextId = _present.activeLayer === 'a' ? 'b' : 'a';
+    const nextEl = document.getElementById('present-chart-' + nextId);
+    const currEl = document.getElementById('present-chart-' + _present.activeLayer);
+    const embedKey = 'embed' + nextId.toUpperCase();
+    const currEmbedKey = 'embed' + _present.activeLayer.toUpperCase();
+
+    nextEl.innerHTML = '';
+    nextEl.style.background = bg;
+
+    if (_present[embedKey]) { try { _present[embedKey].finalize(); } catch(_){} _present[embedKey] = null; }
+    try {
+      const r = await vegaEmbed(nextEl, spec, { renderer: 'svg', actions: false });
+      _present[embedKey] = r;
+    } catch(_) {}
+
+    nextEl.className = 'present-chart-layer front';
+    currEl.className = 'present-chart-layer behind';
+
+    _present.activeLayer = nextId;
+    setTimeout(() => {
+      if (_present[currEmbedKey]) { try { _present[currEmbedKey].finalize(); } catch(_){} _present[currEmbedKey] = null; }
+      currEl.innerHTML = '';
+    }, 700);
+  }
+
+  _present.current = stepIndex;
+  _annClear();
+  _presentUpdateUI();
+}
+
+function _presentUpdateUI() {
+  const dots = document.getElementById('present-dots');
+  const total = _present.steps.length;
+  dots.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'present-dot' + (i === _present.current ? ' active' : '');
+    dot.onclick = () => _presentGoTo(i);
+    dots.appendChild(dot);
+  }
+  document.getElementById('present-step-label').textContent =
+    `${_present.current + 1} / ${total}`;
+  document.getElementById('present-play').textContent =
+    _present.playing ? '⏸ PAUSE' : '▶ PLAY';
+
+  document.querySelectorAll('.present-step-item').forEach((el, i) => {
+    el.classList.toggle('active', i === _present.current);
+  });
+  _presentUpdateCode();
+}
+
+function _presentGoTo(index) {
+  if (index < 0 || index >= _present.steps.length) return;
+  _presentRender(index, true);
+}
+
+function _presentNext() {
+  const next = _present.current + 1;
+  if (next >= _present.steps.length) {
+    if (_present.playing) _presentPause();
+    return;
+  }
+  _presentGoTo(next);
+}
+
+function _presentPrev() {
+  _presentGoTo(_present.current - 1);
+}
+
+function _presentPlay() {
+  if (_present.steps.length < 2) return;
+  _present.playing = true;
+  _presentUpdateUI();
+  _present.timer = setInterval(() => _presentNext(), _present.interval);
+}
+
+function _presentPause() {
+  _present.playing = false;
+  if (_present.timer) { clearInterval(_present.timer); _present.timer = null; }
+  _presentUpdateUI();
+}
+
+function _presentTogglePlay() {
+  if (_present.playing) _presentPause();
+  else _presentPlay();
+}
+
+function _presentRenderStepList() {
+  const list = document.getElementById('present-step-list');
+  list.innerHTML = '';
+  _present.steps.forEach((step, i) => {
+    const item = document.createElement('div');
+    item.className = 'present-step-item' + (i === _present.current ? ' active' : '');
+    const markType = step.spec.mark?.type || step.spec.mark || '—';
+    const theme = step.config?.background ? step.config.background : '';
+    item.innerHTML = `
+      <div class="present-step-head">
+        <span class="present-step-name" contenteditable="true">${step.name}</span>
+        <div class="present-step-actions">
+          ${i > 0 ? '<button data-act="up" title="Move up">↑</button>' : ''}
+          ${i < _present.steps.length - 1 ? '<button data-act="down" title="Move down">↓</button>' : ''}
+          ${_present.steps.length > 1 ? '<button data-act="del" title="Delete step">✕</button>' : ''}
+        </div>
+      </div>
+      <div class="present-step-desc">${markType}${theme ? ' · ' + theme : ''}</div>
+    `;
+    const nameEl = item.querySelector('.present-step-name');
+    nameEl.addEventListener('blur', () => { step.name = nameEl.textContent.trim() || `Step ${i+1}`; });
+    nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } });
+
+    item.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON' || e.target.isContentEditable) return;
+      _presentGoTo(i);
+    });
+
+    item.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const act = btn.dataset.act;
+        if (act === 'del') {
+          _present.steps.splice(i, 1);
+          if (_present.current >= _present.steps.length) _present.current = _present.steps.length - 1;
+        } else if (act === 'up' && i > 0) {
+          [_present.steps[i-1], _present.steps[i]] = [_present.steps[i], _present.steps[i-1]];
+        } else if (act === 'down' && i < _present.steps.length - 1) {
+          [_present.steps[i], _present.steps[i+1]] = [_present.steps[i+1], _present.steps[i]];
+        }
+        _presentRenderStepList();
+        _presentUpdateUI();
+      });
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// ─── Code overlay diff ────────────────────────────────────────
+function _specDiff(prev, curr) {
+  if (!prev) return curr;
+  const diff = {};
+  for (const key of Object.keys(curr)) {
+    const pv = prev[key], cv = curr[key];
+    if (JSON.stringify(pv) === JSON.stringify(cv)) continue;
+    if (pv && cv && typeof pv === 'object' && typeof cv === 'object' && !Array.isArray(pv) && !Array.isArray(cv)) {
+      const nested = _specDiff(pv, cv);
+      if (Object.keys(nested).length > 0) diff[key] = nested;
+    } else {
+      diff[key] = cv;
+    }
+  }
+  for (const key of Object.keys(prev)) {
+    if (!(key in curr)) diff[key] = undefined;
+  }
+  return diff;
+}
+
+function _presentUpdateCode() {
+  const panel = document.getElementById('present-code-panel');
+  if (panel.classList.contains('hidden')) return;
+  const body = document.getElementById('present-code-body');
+  const idx = _present.current;
+
+  if (idx === 0) {
+    body.innerHTML = '<span style="color:#666">— Base state —</span>';
+    return;
+  }
+
+  const prev = _present.steps[idx - 1];
+  const curr = _present.steps[idx];
+  const specDiff = _specDiff(prev.spec, curr.spec);
+  const cfgDiff = _specDiff(prev.config, curr.config);
+  const hasCfg = Object.keys(cfgDiff).length > 0;
+  const hasSpec = Object.keys(specDiff).length > 0;
+
+  if (!hasSpec && !hasCfg) {
+    body.innerHTML = '<span style="color:#666">— No changes —</span>';
+    return;
+  }
+
+  let html = '';
+  if (hasSpec) {
+    html += _diffToHtml(specDiff);
+  }
+  if (hasCfg) {
+    if (hasSpec) html += '\n\n<span class="diff-key">// config</span>\n';
+    html += _diffToHtml(cfgDiff);
+  }
+  body.innerHTML = html;
+}
+
+function _diffToHtml(obj) {
+  const json = JSON.stringify(obj, null, 2);
+  return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"([^"]+)":/g, '<span class="diff-key">"$1"</span>:');
+}
+
+function _presentToggleCode() {
+  const panel = document.getElementById('present-code-panel');
+  const btn = document.getElementById('present-code-toggle');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('active', !panel.classList.contains('hidden'));
+  if (!panel.classList.contains('hidden')) _presentUpdateCode();
+}
+
+/* ─── ANNOTATION ─── */
+const _ann = { tool: 'draw', color: '#e24b4a', size: 2.5, drawing: false, path: null, points: [], stack: [] };
+
+function _annToggle() {
+  const svg = document.getElementById('present-annotate-svg');
+  const tb = document.getElementById('present-annotate-toolbar');
+  const btn = document.getElementById('present-annotate-toggle');
+  const active = svg.classList.toggle('active');
+  tb.classList.toggle('hidden', !active);
+  btn.classList.toggle('active', active);
+  svg.classList.toggle('tool-text', active && _ann.tool === 'text');
+}
+
+function _annClear() {
+  const svg = document.getElementById('present-annotate-svg');
+  while (svg.children.length > 2) svg.removeChild(svg.lastChild);
+  _ann.stack = [];
+}
+
+function _annUndo() {
+  if (!_ann.stack.length) return;
+  const el = _ann.stack.pop();
+  el.remove();
+}
+
+function _annStartDraw(e) {
+  if (_ann.tool !== 'draw' && _ann.tool !== 'arrow') return;
+  const svg = document.getElementById('present-annotate-svg');
+  const rect = svg.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  _ann.drawing = true;
+  _ann.points = [{ x, y }];
+  if (_ann.tool === 'draw') {
+    _ann.path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    _ann.path.setAttribute('fill', 'none');
+    _ann.path.setAttribute('stroke', _ann.color);
+    _ann.path.setAttribute('stroke-width', _ann.size);
+    _ann.path.setAttribute('stroke-linecap', 'round');
+    _ann.path.setAttribute('stroke-linejoin', 'round');
+    _ann.path.setAttribute('d', `M${x} ${y}`);
+    svg.appendChild(_ann.path);
+  }
+}
+
+function _annMoveDraw(e) {
+  if (!_ann.drawing) return;
+  const svg = document.getElementById('present-annotate-svg');
+  const rect = svg.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  _ann.points.push({ x, y });
+  if (_ann.tool === 'draw' && _ann.path) {
+    _ann.path.setAttribute('d', _ann.path.getAttribute('d') + ` L${x} ${y}`);
+  }
+}
+
+function _annArrowMarker(color) {
+  const id = 'ann-arrow-' + color.replace('#', '');
+  if (document.getElementById(id)) return id;
+  const defs = document.getElementById('ann-defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', id);
+  marker.setAttribute('markerWidth', '10');
+  marker.setAttribute('markerHeight', '7');
+  marker.setAttribute('refX', '9');
+  marker.setAttribute('refY', '3.5');
+  marker.setAttribute('orient', 'auto');
+  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  poly.setAttribute('points', '0 0, 10 3.5, 0 7');
+  poly.setAttribute('fill', color);
+  marker.appendChild(poly);
+  defs.appendChild(marker);
+  return id;
+}
+
+function _annEndDraw(e) {
+  if (!_ann.drawing) return;
+  _ann.drawing = false;
+  if (_ann.tool === 'draw' && _ann.path) {
+    _ann.stack.push(_ann.path);
+    _ann.path = null;
+  } else if (_ann.tool === 'arrow' && _ann.points.length >= 2) {
+    const svg = document.getElementById('present-annotate-svg');
+    const start = _ann.points[0];
+    const end = _ann.points[_ann.points.length - 1];
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', start.x); line.setAttribute('y1', start.y);
+    line.setAttribute('x2', end.x); line.setAttribute('y2', end.y);
+    line.setAttribute('stroke', _ann.color);
+    line.setAttribute('stroke-width', _ann.size);
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('marker-end', `url(#${_annArrowMarker(_ann.color)})`);
+    svg.appendChild(line);
+    _ann.stack.push(line);
+  }
+}
+
+function _annPlaceText(e) {
+  if (_ann.tool !== 'text') return;
+  const svg = document.getElementById('present-annotate-svg');
+  const wrap = document.getElementById('present-chart-wrap');
+  const rect = svg.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  svg.style.pointerEvents = 'none';
+  const input = document.createElement('input');
+  input.className = 'ann-text-input';
+  input.style.left = x + 'px';
+  input.style.top = y + 'px';
+  input.style.color = _ann.color;
+  wrap.appendChild(input);
+  setTimeout(() => input.focus(), 0);
+  const commit = () => {
+    const text = input.value.trim();
+    input.remove();
+    svg.style.pointerEvents = '';
+    if (!text) return;
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    el.setAttribute('x', x); el.setAttribute('y', y + 16);
+    el.setAttribute('fill', _ann.color);
+    el.setAttribute('font-size', Math.max(14, _ann.size * 6));
+    el.setAttribute('font-family', 'var(--font)');
+    el.setAttribute('font-weight', '500');
+    el.textContent = text;
+    svg.appendChild(el);
+    _ann.stack.push(el);
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value = ''; input.blur(); } });
+}
+
+function _annInitEvents() {
+  const svg = document.getElementById('present-annotate-svg');
+  svg.addEventListener('pointerdown', e => {
+    if (!svg.classList.contains('active')) return;
+    if (_ann.tool === 'text') { _annPlaceText(e); return; }
+    _annStartDraw(e);
+  });
+  svg.addEventListener('pointermove', _annMoveDraw);
+  svg.addEventListener('pointerup', _annEndDraw);
+  svg.addEventListener('pointerleave', _annEndDraw);
+
+  document.querySelectorAll('.ann-tool[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ann-tool[data-tool]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _ann.tool = btn.dataset.tool;
+      const svg = document.getElementById('present-annotate-svg');
+      svg.classList.toggle('tool-text', _ann.tool === 'text');
+    });
+  });
+  document.querySelectorAll('.ann-color').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ann-color').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _ann.color = btn.dataset.color;
+    });
+  });
+  document.getElementById('ann-size').addEventListener('change', e => { _ann.size = parseFloat(e.target.value); });
+  document.getElementById('ann-undo').addEventListener('click', _annUndo);
+  document.getElementById('ann-clear').addEventListener('click', _annClear);
+  document.getElementById('present-annotate-toggle').onclick = _annToggle;
+}
+
+function enterPresentation() {
+  if (_present.steps.length < 2) {
+    showShareFeedback('⚠ Capture at least 2 steps first', 'var(--red)', 2500);
+    return;
+  }
+  _present.current = 0;
+  _present.playing = false;
+  if (_present.timer) { clearInterval(_present.timer); _present.timer = null; }
+
+  document.getElementById('present-overlay').classList.remove('hidden');
+  _presentRenderStepList();
+  _presentRender(0, false);
+}
+
+function exitPresentation() {
+  _presentPause();
+  if (_present.embedA) { try { _present.embedA.finalize(); } catch(_){} _present.embedA = null; }
+  if (_present.embedB) { try { _present.embedB.finalize(); } catch(_){} _present.embedB = null; }
+  document.getElementById('present-chart-a').innerHTML = '';
+  document.getElementById('present-chart-b').innerHTML = '';
+  const overlay = document.getElementById('present-overlay');
+  overlay.style.background = '';
+  overlay.classList.add('hidden');
+  document.getElementById('present-editor').classList.remove('open');
+  document.getElementById('present-code-panel').classList.add('hidden');
+  document.getElementById('present-code-toggle').classList.remove('active');
+  _annClear();
+  document.getElementById('present-annotate-svg').classList.remove('active');
+  document.getElementById('present-annotate-toolbar').classList.add('hidden');
+  document.getElementById('present-annotate-toggle').classList.remove('active');
+}
+
+function loadSpecFromHash() {
+  try {
+    const hash = location.hash;
+    if (!hash.startsWith('#spec=')) return false;
+    const encoded = hash.slice(6);
+
+    // Try LZ decompression first, fall back to legacy base64
+    let decoded;
+    try {
+      decoded = LZString.decompressFromEncodedURIComponent(encoded);
+    } catch(_) {
+      decoded = decodeURIComponent(escape(atob(encoded)));
+    }
+
+    const spec = JSON.parse(decoded);
+    setSpec(spec.config ? spec : { ...spec, config: CONFIGS.find(c => c.id === 'warm-sand').cfg });
+    switchEditorView('spec');
+    return true;
+  } catch(_) {
+    return false;
+  }
+}
+
+function buildTemplateRail() {
+  const rail = document.getElementById('template-rail');
+  TEMPLATES.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tpl-btn';
+    btn.dataset.id = t.id;
+    btn.innerHTML = t.name;
+    btn.onclick = () => applyTemplate(t);
+    rail.appendChild(btn);
+  });
+}
+
+function buildSampleChips() {
+  const c = document.getElementById('sample-chips');
+  SAMPLES.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'sample-chip';
+    chip.textContent = s.name;
+    chip.onclick = () => fetchSample(s);
+    c.appendChild(chip);
+  });
+}
+
+function bindEvents() {
+  // Paste modal
+  document.getElementById('btn-paste').onclick   = () => pasteModal.classList.remove('hidden');
+  document.getElementById('modal-close').onclick  = () => pasteModal.classList.add('hidden');
+  pasteModal.addEventListener('click', e => { if (e.target === pasteModal) pasteModal.classList.add('hidden'); });
+
+  document.querySelectorAll('.fmt-btn').forEach(b => {
+    b.onclick = () => {
+      pasteFormat = b.dataset.fmt;
+      document.querySelectorAll('.fmt-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    };
+  });
+
+  document.getElementById('btn-load-paste').onclick = () => {
+    const txt = pasteArea.value.trim();
+    if (!txt) return;
+    if (pasteFormat === 'json') parseJSON(txt);
+    else parseCSV(txt, pasteFormat === 'tsv' ? '\t' : ',');
+    pasteModal.classList.add('hidden');
+  };
+
+  // File upload
+  document.getElementById('file-input').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    readFile(f); e.target.value = '';
+  });
+
+  // Drag & drop
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.style.borderColor = '';
+    const f = e.dataTransfer.files[0]; if (f) readFile(f);
+  });
+
+  document.getElementById('btn-console-clear').onclick = clearConsole;
+  // Populate and wire config preset dropdown
+  const cfgSelect = document.getElementById('cfg-preset-select');
+  const darkThemes  = CONFIGS.filter(c => !['clean-light','warm-sand','soft-rose','slate-light'].includes(c.id));
+  const lightThemes = CONFIGS.filter(c =>  ['clean-light','warm-sand','soft-rose','slate-light'].includes(c.id));
+
+  const grpDark = document.createElement('optgroup');
+  grpDark.label = '— Dark —';
+  darkThemes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    if (c.id === activeConfigId) opt.selected = true;
+    grpDark.appendChild(opt);
+  });
+  cfgSelect.appendChild(grpDark);
+
+  const grpLight = document.createElement('optgroup');
+  grpLight.label = '— Light —';
+  lightThemes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    if (c.id === activeConfigId) opt.selected = true;
+    grpLight.appendChild(opt);
+  });
+  cfgSelect.appendChild(grpLight);
+  cfgSelect.addEventListener('change', () => {
+    const chosen = CONFIGS.find(c => c.id === cfgSelect.value);
+    if (!chosen) return;
+    activeConfigId = chosen.id;
+    configBuffer = JSON.stringify(chosen.cfg, null, 2);
+    if (activeEditorView === 'config') {
+      suppressRender = true;
+      cmEditor.setValue(configBuffer);
+      suppressRender = false;
+    }
+    renderSpec();
+    setTimeout(syncPropsFromSpec, 80);
+  });
+
+  document.getElementById('btn-add-layer').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('add-layer-menu').classList.toggle('open');
+  });
+  document.querySelectorAll('.add-layer-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      addLayer(btn.dataset.type);
+      document.getElementById('add-layer-menu').classList.remove('open');
+    });
+  });
+  document.addEventListener('click', () => {
+    document.getElementById('add-layer-menu')?.classList.remove('open');
+    document.getElementById('share-menu')?.classList.remove('open');
+  });
+
+  // Share options dropdown
+  document.getElementById('btn-share-options').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('share-menu').classList.toggle('open');
+  });
+  document.getElementById('share-menu').addEventListener('click', e => e.stopPropagation());
+  const _so = id => fn => document.getElementById(id).addEventListener('click', () => {
+    document.getElementById('share-menu').classList.remove('open');
+    fn();
+  });
+  _so('sopt-spec')(shareSpec);
+  _so('sopt-visual')(shareVisual);
+  _so('sopt-copy-img')(copyChartImage);
+  _so('sopt-save-png')(savePng);
+  _so('sopt-save-svg')(saveSvg);
+  _so('sopt-vega-editor')(openInVegaEditor);
+  _so('sopt-view-vega')(viewAsVega);
+  _so('sopt-view-deneb')(viewAsDeneb);
+
+  // Code viewer modal
+  document.getElementById('btn-code-close').onclick = () => document.getElementById('code-viewer-modal').classList.add('hidden');
+  document.getElementById('code-viewer-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('code-viewer-modal')) document.getElementById('code-viewer-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-code-copy').addEventListener('click', () => {
+    const code = document.getElementById('code-viewer-pre').textContent;
+    const label = _codeViewerConfigJson ? 'COPY SPEC' : 'COPY CODE';
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        const btn = document.getElementById('btn-code-copy');
+        btn.textContent = '✓ COPIED!';
+        setTimeout(() => { btn.textContent = label; }, 1800);
+      });
+  });
+  document.getElementById('btn-code-copy-config').addEventListener('click', () => {
+    if (!_codeViewerConfigJson) return;
+    navigator.clipboard.writeText(_codeViewerConfigJson)
+      .then(() => {
+        const btn = document.getElementById('btn-code-copy-config');
+        btn.textContent = '✓ COPIED!';
+        setTimeout(() => { btn.textContent = 'COPY CONFIG'; }, 1800);
+      });
+  });
+
+  // Capture & Presentation mode
+  document.getElementById('btn-capture').onclick = _captureStep;
+  document.getElementById('btn-present').onclick = enterPresentation;
+  document.getElementById('present-clear-steps').onclick = () => {
+    _present.steps = [];
+    document.getElementById('capture-count').classList.add('hidden');
+    _presentRenderStepList();
+    _presentUpdateUI();
+  };
+  document.getElementById('present-exit').onclick = exitPresentation;
+  document.getElementById('present-play').onclick = _presentTogglePlay;
+  document.getElementById('present-next').onclick = _presentNext;
+  document.getElementById('present-prev').onclick = _presentPrev;
+  document.getElementById('present-speed').onchange = function() {
+    _present.interval = parseInt(this.value);
+    if (_present.playing) { _presentPause(); _presentPlay(); }
+  };
+  document.getElementById('present-edit-btn').onclick = () => {
+    document.getElementById('present-editor').classList.toggle('open');
+  };
+  document.getElementById('present-editor-close').onclick = () => {
+    document.getElementById('present-editor').classList.remove('open');
+  };
+  document.getElementById('present-code-toggle').onclick = _presentToggleCode;
+  document.getElementById('present-code-font').onchange = function() {
+    document.getElementById('present-code-body').style.fontFamily = this.value;
+  };
+  document.getElementById('present-code-size').onchange = function() {
+    document.getElementById('present-code-body').style.fontSize = this.value + 'px';
+  };
+  document.querySelectorAll('#present-code-settings [data-pos]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = document.getElementById('present-code-panel');
+      panel.className = panel.className.replace(/pos-\w+/, 'pos-' + btn.dataset.pos);
+      document.querySelectorAll('#present-code-settings [data-pos]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  _annInitEvents();
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('present-overlay').classList.contains('hidden')) return;
+    if (e.target.isContentEditable || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'Escape') exitPresentation();
+    else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); _presentNext(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); _presentPrev(); }
+    else if (e.key === 'c' || e.key === 'C') _presentToggleCode();
+    else if (e.key === 'a' || e.key === 'A') _annToggle();
+  });
+
+  document.getElementById('btn-theme-toggle').onclick    = toggleStudioTheme;
+  document.getElementById('btn-reset-template').onclick  = resetCurrentTemplate;
+  document.getElementById('btn-help').onclick         = () => document.getElementById('help-overlay').classList.remove('hidden');
+  document.getElementById('btn-help-close').onclick   = () => document.getElementById('help-overlay').classList.add('hidden');
+  document.getElementById('help-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('help-overlay')) document.getElementById('help-overlay').classList.add('hidden');
+  });
+
+  // Live / Manual toggle
+  const btnLive = document.getElementById('btn-live-toggle');
+  const btnRun  = document.getElementById('btn-run');
+
+  document.getElementById('btn-run').onclick = () => {
+    _syncSpecFromEditor();
+    renderSpec();
+  };
+
+  btnLive.onclick = () => {
+    liveMode = !liveMode;
+    if (liveMode) {
+      btnLive.textContent = '⚡ LIVE';
+      btnLive.classList.add('btn-primary');
+      btnRun.style.display = 'none';
+      // Render immediately on switching back to live
+      renderSpec();
+    } else {
+      btnLive.textContent = '✋ MANUAL';
+      btnLive.classList.remove('btn-primary');
+      btnRun.style.display = '';
+    }
+  };
+
+  // Ctrl+Enter to run in manual mode
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('help-overlay').classList.add('hidden');
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      _syncSpecFromEditor();
+      renderSpec();
+    }
+  });
+  document.getElementById('btn-format').onclick  = formatJSON;
+document.getElementById('btn-fit').onclick = () => {
+  if (fitState.active) { deactivateFit(); if (liveMode) renderSpec(); }
+  else fitToFrame();
+};
+  document.getElementById('btn-pvz-in').onclick   = () => setPreviewZoom(previewZoomIdx + 1);
+  document.getElementById('btn-pvz-out').onclick  = () => setPreviewZoom(previewZoomIdx - 1);
+  document.getElementById('btn-edz-in').onclick   = () => setCodeZoom(codeZoomIdx + 1);
+  document.getElementById('btn-edz-out').onclick  = () => setCodeZoom(codeZoomIdx - 1);
+  document.getElementById('btn-dtz-in').onclick   = () => setDataZoom(dataZoomIdx + 1);
+  document.getElementById('btn-dtz-out').onclick  = () => setDataZoom(dataZoomIdx - 1);
+
+  // data search input
+  document.getElementById('dt-search').addEventListener('input', e => {
+    _dtSearch = e.target.value;
+    if (_dtData.length) _renderDtView();
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// TEMPLATES
+// ─────────────────────────────────────────────────────────────
+function saveCurrentTemplateToCache() {
+  if (!activeTemplateId) return;
+  // Grab the latest editor content so manual edits are captured
+  _syncSpecFromEditor();
+  templateCache[activeTemplateId] = specBuffer;
+}
+
+function applyTemplate(t, forceDefault) {
+  // Save the outgoing template's edits before switching
+  saveCurrentTemplateToCache();
+
+  activeTemplateId = t.id;
+  document.querySelectorAll('.tpl-btn').forEach(b => b.classList.toggle('active', b.dataset.id === t.id));
+
+  // Clear data table so stale data from a previous template doesn't linger
+  if (!userData) {
+    dataGridWrap.innerHTML = `<div class="db-empty"><span class="db-empty-icon">⊡</span>Loading data…</div>`;
+    dbInfo.textContent = '';
+    dbBadge.textContent = '';
+  }
+
+  selectedConcatIdx = 0;
+  selectedLayerIdx  = 0;
+
+  // Restore cached edits if available, otherwise use the template default
+  let spec;
+  if (!forceDefault && templateCache[t.id]) {
+    try { spec = JSON.parse(templateCache[t.id]); } catch(_) { spec = null; }
+  }
+  if (!spec) spec = JSON.parse(JSON.stringify(t.spec));
+
+  const activeCfg = _getActiveConfig();
+  spec.config = activeCfg.cfg;
+  configBuffer = JSON.stringify(activeCfg.cfg, null, 2);
+
+  // Facet/repeat or explicit noFit: turn fit OFF. Everything else: turn fit ON.
+  const isMultiView = !!(t.spec.facet || t.spec.repeat || t.spec.encoding?.facet || t.spec.vconcat || t.spec.hconcat || t.spec.concat);
+  const noFit = isMultiView || !!t.noFit;
+  if (noFit) {
+    fitState.width  = null;
+    fitState.height = null;
+    deactivateFit();
+  }
+
+  setSpec(spec);
+
+  if (!noFit) {
+    setTimeout(fitToFrame, 600);
+  }
+}
+
+function resetCurrentTemplate() {
+  const t = TEMPLATES.find(t => t.id === activeTemplateId);
+  if (!t) return;
+  delete templateCache[t.id];
+  applyTemplate(t, true);
+}
+
+function setSpec(spec) {
+  // Clear field cache — new spec may have a different data source
+  if (!userData) { _cachedRawFields = []; _cachedRawRows = []; }
+  // Split config from spec into separate buffers
+  const specOnly = Object.assign({}, spec);
+  delete specOnly.config;
+
+  // Always use the currently selected theme — don't let the spec overwrite the user's choice
+  const activeCfg = _getActiveConfig();
+  configBuffer = JSON.stringify(activeCfg.cfg, null, 2);
+
+  // Keep dropdown in sync
+  const cfgSelect = document.getElementById('cfg-preset-select');
+  if (cfgSelect) cfgSelect.value = activeConfigId;
+  specBuffer   = JSON.stringify(specOnly, null, 2);
+
+  suppressRender = true;
+  cmEditor.setValue(activeEditorView === 'config' ? configBuffer : specBuffer);
+  suppressRender = false;
+
+  renderSpec();
+  setTimeout(syncPropsFromSpec, 80);
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATA LOADING
+// ─────────────────────────────────────────────────────────────
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const txt = ev.target.result;
+    if (file.name.endsWith('.json')) parseJSON(txt);
+    else parseCSV(txt, file.name.endsWith('.tsv') ? '\t' : ',');
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text, delimiter = ',', fromSample) {
+  try {
+    const r = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true, delimiter });
+    if (r.errors.length && !r.data.length) { err("CSV Error: " + r.errors[0].message); return; }
+    setData(r.data, r.meta.fields || Object.keys(r.data[0] || {}));
+    if (!fromSample) clearSampleActive();
+  } catch(e) { if (!fromSample) err("CSV Error: " + e.message); }
+}
+
+function parseJSON(text, fromSample) {
+  try {
+    const d = JSON.parse(text);
+    const arr = Array.isArray(d) ? d : [d];
+    const fields = arr.length ? Object.keys(arr[0]) : [];
+    setData(arr, fields);
+    if (!fromSample) clearSampleActive();
+  } catch(e) { if (!fromSample) err("JSON Error: " + e.message); }
+}
+
+async function fetchSample(s) {
+  clearSampleActive();
+  document.querySelectorAll('.sample-chip').forEach(c => {
+    if (c.textContent === s.name) c.classList.add('active');
+  });
+  try {
+    const url = (s.base || DS) + s.file;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const txt = await resp.text();
+    if (s.file.endsWith('.csv')) parseCSV(txt, ',', true);
+    else parseJSON(txt, true);
+  } catch(e) { err("Failed to load sample: " + e.message); }
+}
+
+function clearSampleActive() {
+  document.querySelectorAll('.sample-chip').forEach(c => c.classList.remove('active'));
+}
+
+// ─────────────────────────────────────────────────────────────
+// SET DATA
+// ─────────────────────────────────────────────────────────────
+function setData(data, fields) {
+  userData = data;
+  if (data?.length) { _cachedRawFields = Object.keys(data[0]); _cachedRawRows = data; }
+  ftMapCache = null; // invalidate field type cache
+  showFields(data, fields);
+  renderDataTable(data, fields);
+  injectData();
+  if (typeof _populateFieldSelects === 'function') _populateFieldSelects();
+  if (typeof _buildFilterValueWidget === 'function') _buildFilterValueWidget();
+  switchTab('spec');
+}
+
+function injectData() {
+  if (!userData) return;
+  try {
+    const spec = JSON.parse(specBuffer);
+
+    // Set data at top level and remove any layer-level data references
+    spec.data = { name: 'dataset' };
+    if (spec.transform) delete spec.transform;
+    if (spec.layer) {
+      spec.layer.forEach(l => { delete l.data; delete l.transform; });
+    }
+
+    specBuffer = JSON.stringify(spec, null, 2);
+    suppressRender = true;
+    cmEditor.setValue(specBuffer);
+    suppressRender = false;
+    renderSpec();
+  } catch(e) { err("Could not inject data: " + e.message); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// FIELD LIST
+// ─────────────────────────────────────────────────────────────
+function guessType(vals) {
+  const s = vals.filter(v => v != null).slice(0, 30);
+  if (!s.length) return 'N';
+  if (s.every(v => typeof v === 'number' || (!isNaN(+v) && String(v).trim() !== ''))) return 'Q';
+  if (s.some(v => typeof v === 'string' && !isNaN(Date.parse(v)) && isNaN(+v))) return 'T';
+  const u = new Set(s.map(String));
+  if (u.size <= Math.min(12, s.length * 0.6)) return 'O';
+  return 'N';
+}
+
+function showFields(data, fields) {
+  fieldsSec.classList.remove('hidden');
+  rowLabel.textContent = `${data.length.toLocaleString()} rows`;
+  fieldList.innerHTML = '';
+  fields.forEach(f => {
+    const type = guessType(data.map(r => r[f]));
+    const el = document.createElement('div');
+    el.className = 'field-item';
+    el.title = `Click to copy "${f}"`;
+    el.innerHTML = `<span class="field-type ft-${type}">${type}</span><span class="field-name">${f}</span>`;
+    el.onclick = () => {
+      navigator.clipboard.writeText(`"${f}"`).catch(() => {});
+      el.style.outline = '1px solid var(--accent)';
+      setTimeout(() => el.style.outline = '', 400);
+    };
+    fieldList.appendChild(el);
+  });
+}
+
+// Sort / search state for the data preview table
+let _dtData    = [];
+let _dtFields  = [];
+let _dtSortCol = null;   // column index (null = none)
+let _dtSortDir = 'asc';  // 'asc' | 'desc'
+let _dtSearch  = '';     // global search string
+
+function renderDataTable(data, fields) {
+  _dtData    = data;
+  _dtFields  = fields;
+  _dtSortCol = null;
+  _dtSortDir = 'asc';
+  _dtSearch  = '';
+  const si = document.getElementById('dt-search');
+  if (si) si.value = '';
+  _renderDtView();
+}
+
+function _renderDtView() {
+  const data   = _dtData;
+  const fields = _dtFields;
+  const MAX    = 1000;
+
+  dbInfo.textContent = `${data.length.toLocaleString()} rows × ${fields.length} columns`;
+
+  // ── filter ──────────────────────────────────────────────────
+  let rows = data;
+  const q = _dtSearch.trim().toLowerCase();
+  if (q) {
+    // detect which fields have at least one string value in sample
+    const sample = data.slice(0, 50);
+    const strFields = fields.filter(f => sample.some(r => r[f] != null && typeof r[f] === 'string'));
+    rows = data.filter(row => strFields.some(f => {
+      const v = row[f];
+      return v != null && String(v).toLowerCase().includes(q);
+    }));
+  }
+
+  // ── sort ────────────────────────────────────────────────────
+  if (_dtSortCol !== null) {
+    const f   = fields[_dtSortCol];
+    const dir = _dtSortDir === 'asc' ? 1 : -1;
+    rows = [...rows].sort((a, b) => {
+      const av = a[f], bv = b[f];
+      if (av == null && bv == null) return 0;
+      if (av == null) return dir;
+      if (bv == null) return -dir;
+      if (typeof av === 'number' && typeof bv === 'number') return dir * (av - bv);
+      return dir * String(av).localeCompare(String(bv));
+    });
+  }
+
+  const showing = Math.min(rows.length, MAX);
+  dbBadge.textContent = q
+    ? `${rows.length.toLocaleString()} match${rows.length !== 1 ? 'es' : ''}${showing < rows.length ? ` · first ${showing.toLocaleString()}` : ''}`
+    : (showing < data.length ? `showing first ${showing.toLocaleString()}` : '');
+
+  // ── render ──────────────────────────────────────────────────
+  const thead = `<thead><tr>${fields.map((f, i) => {
+    const active = _dtSortCol === i;
+    const arrow  = active ? (_dtSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    return `<th class="dt-sort-hdr${active ? ' dt-sort-active' : ''}" data-col="${i}">${f}${arrow}</th>`;
+  }).join('')}</tr></thead>`;
+
+  const tbody = `<tbody>${rows.slice(0, MAX).map(row =>
+    `<tr>${fields.map(f => {
+      const v = row[f];
+      const s = v == null ? '' : String(v);
+      const esc = s.replace(/"/g, '&quot;');
+      return `<td title="${s.length > 30 ? esc : ''}">${s}</td>`;
+    }).join('')}</tr>`
+  ).join('')}</tbody>`;
+
+  dataGridWrap.innerHTML = `<table class="full-tbl">${thead}${tbody}</table>`;
+
+  // sort click handlers
+  dataGridWrap.querySelectorAll('th.dt-sort-hdr').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = +th.dataset.col;
+      if (_dtSortCol === col) {
+        _dtSortDir = _dtSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        _dtSortCol = col;
+        _dtSortDir = 'asc';
+      }
+      _renderDtView();
+    });
+  });
+
+  // reapply zoom
+  const sz = DTZ_SIZES[dataZoomIdx];
+  const tbl = dataGridWrap.querySelector('.full-tbl');
+  if (tbl) tbl.style.fontSize = sz + 'px';
+}
+
+// ─────────────────────────────────────────────────────────────
+// INTELLISENSE
+// ─────────────────────────────────────────────────────────────
+const VL_TYPES    = ['quantitative','nominal','ordinal','temporal'];
+const MARK_TYPES  = ['bar','line','area','point','circle','square','tick','rule','text','rect','boxplot','errorband','errorbar','trail','geoshape','image'];
+const AGGREGATES  = ['sum','mean','median','min','max','count','distinct','valid','missing','variance','stdev','stdevp','variancep','q1','q3','ci0','ci1','product','stderr'];
+const TIME_UNITS  = ['year','quarter','month','week','day','dayofyear','date','hours','minutes','seconds','milliseconds','yearquarter','yearmonth','yearmonthdate','yearmonthdatehours','yearmonthdate','monthdate','hoursminutes','hoursminutesseconds','minutesseconds','secondsmilliseconds'];
+const COLOR_SCHEMES = ['blues','greens','reds','oranges','purples','greys','viridis','magma','inferno','plasma','cividis','turbo','blueorange','brownbluegreen','purplegreen','redblue','redgrey','redyellowblue','redyellowgreen','spectral','tableau10','tableau20','category10','set1','set2','set3','paired','dark2','pastel1'];
+
+// Vega-Lite property catalogue  [key, category-badge, description]
+const VL_KEYS = [
+  // Top-level
+  ['$schema','TOP','Vega-Lite schema URL'],['title','TOP','Chart title'],['description','TOP','Chart description'],
+  ['data','TOP','Data source'],['mark','TOP','Mark type or config'],['encoding','TOP','Visual encodings'],
+  ['transform','TOP','Data transforms array'],['layer','TOP','Layer views'],['hconcat','TOP','Horizontal concat'],
+  ['vconcat','TOP','Vertical concat'],['concat','TOP','General concat'],['facet','TOP','Facet config'],
+  ['repeat','TOP','Repeat spec'],['spec','TOP','Inner spec'],['config','TOP','Global config'],
+  ['width','TOP','Chart width'],['height','TOP','Chart height'],['params','TOP','Interactive params'],
+  ['resolve','TOP','Scale/axis resolution'],['projection','TOP','Geo projection'],['name','TOP','Spec name'],
+  ['background','TOP','Background color'],['padding','TOP','Chart padding'],['autosize','TOP','Auto-sizing'],
+  ['datasets','TOP','Named datasets'],
+  // Encoding channels
+  ['x','ENC','X-axis position'],['y','ENC','Y-axis position'],['x2','ENC','X end position'],
+  ['y2','ENC','Y end position'],['color','ENC','Color encoding'],['size','ENC','Size encoding'],
+  ['shape','ENC','Shape encoding'],['opacity','ENC','Opacity encoding'],['text','ENC','Text encoding'],
+  ['tooltip','ENC','Tooltip fields'],['detail','ENC','Detail grouping'],['order','ENC','Draw order'],
+  ['row','ENC','Row facet'],['column','ENC','Column facet'],['theta','ENC','Arc angle'],
+  ['radius','ENC','Arc radius'],['strokeWidth','ENC','Stroke width enc'],['strokeDash','ENC','Stroke dash enc'],
+  ['angle','ENC','Rotation angle'],['xOffset','ENC','X offset enc'],['yOffset','ENC','Y offset enc'],
+  ['href','ENC','Link URL enc'],['key','ENC','Object constancy key'],
+  // Channel definition
+  ['field','CH','Data field name'],['type','CH','Data type'],['aggregate','CH','Aggregation fn'],
+  ['bin','CH','Binning'],['timeUnit','CH','Time unit'],['scale','CH','Scale options'],
+  ['axis','CH','Axis options'],['legend','CH','Legend options'],['sort','CH','Sort order'],
+  ['stack','CH','Stack mode'],['impute','CH','Impute missing'],['condition','CH','Conditional enc'],
+  ['format','CH','Format string'],['formatType','CH','Format type'],['bandPosition','CH','Band position'],
+  ['value','CH','Constant value'],['datum','CH','Constant datum'],['shorthand','CH','Shorthand string'],
+  // Mark
+  ['filled','MK','Fill mark shape'],['fill','MK','Fill color'],['stroke','MK','Stroke color'],
+  ['strokeWidth','MK','Stroke width'],['strokeOpacity','MK','Stroke opacity'],['fillOpacity','MK','Fill opacity'],
+  ['cornerRadius','MK','Corner radius'],['cornerRadiusEnd','MK','Bar end radius'],
+  ['point','MK','Points on line'],['line','MK','Connecting line'],['interpolate','MK','Line interpolation'],
+  ['tension','MK','Interpolation tension'],['extent','MK','Whisker extent'],['binSpacing','MK','Bin gap'],
+  ['clip','MK','Clip to view'],['cursor','MK','Mouse cursor'],['align','MK','Text alignment'],
+  ['baseline','MK','Text baseline'],['fontSize','MK','Font size'],['fontWeight','MK','Font weight'],
+  ['fontStyle','MK','Font style'],['font','MK','Font family'],['xOffset','MK','X offset px'],
+  ['yOffset','MK','Y offset px'],['limit','MK','Text truncation'],['ellipsis','MK','Truncation char'],
+  ['orient','MK','Mark orientation'],['invalid','MK','Invalid data handling'],
+  ['blend','MK','Blend mode'],['thickness','MK','Tick thickness'],
+  // Data source
+  ['url','DATA','Remote data URL'],['values','DATA','Inline data array'],
+  ['csv','DATA','CSV format hint'],['json','DATA','JSON format hint'],
+  // Transform
+  ['filter','TX','Filter expression'],['calculate','TX','Derived field expr'],['as','TX','Output field name'],
+  ['window','TX','Window functions'],['groupby','TX','Group-by fields'],
+  ['joinaggregate','TX','Join aggregate'],['flatten','TX','Flatten arrays'],
+  ['fold','TX','Fold to key-value'],['sample','TX','Random sample N'],['lookup','TX','Lookup join'],
+  ['pivot','TX','Pivot to wide'],['density','TX','KDE density'],['regression','TX','Regression fit'],
+  ['loess','TX','LOESS smoothing'],['op','TX','Window/agg op'],['frame','TX','Window frame'],
+  ['fields','TX','Fields to fold'],['from','TX','Lookup source'],['method','TX','Regression method'],
+  // Scale
+  ['domain','SC','Scale domain'],['range','SC','Scale range'],['scheme','SC','Color scheme'],
+  ['zero','SC','Include zero'],['nice','SC','Nice axis ends'],['clamp','SC','Clamp values'],
+  ['padding','SC','Band padding'],['paddingInner','SC','Inner padding'],['paddingOuter','SC','Outer padding'],
+  ['reverse','SC','Reverse scale'],['exponent','SC','Power exponent'],['base','SC','Log base'],
+  // Axis / Legend
+  ['grid','AX','Show grid lines'],['ticks','AX','Show tick marks'],['labels','AX','Show labels'],
+  ['tickCount','AX','Tick count hint'],['tickMinStep','AX','Min tick step'],
+  ['labelAngle','AX','Label rotation'],['labelOverlap','AX','Overlap strategy'],
+  ['offset','AX','Axis offset px'],['translate','AX','Axis translate'],
+  ['domainColor','AX','Domain line color'],['gridColor','AX','Grid color'],
+  ['labelColor','AX','Label color'],['tickColor','AX','Tick color'],['titleColor','AX','Title color'],
+  ['labelFontSize','AX','Label font size'],['titleFontSize','AX','Title font size'],
+  ['titlePadding','AX','Title padding'],['minExtent','AX','Min axis extent'],['maxExtent','AX','Max axis extent'],
+  ['tickBand','AX','Band tick placement'],['gradientLength','AX','Gradient bar length'],
+  // Config sub-objects
+  ['view','CFG','View config'],['header','CFG','Facet header cfg'],['numberFormat','CFG','Number format'],
+  ['timeFormat','CFG','Time format'],['lineBreak','CFG','Line break char'],
+  // Misc
+  ['columns','LAY','Facet columns'],['spacing','LAY','View spacing'],['center','LAY','Center views'],
+  ['bounds','LAY','Layout bounds'],['selection','LAY','Interactive selection'],
+  ['on','LAY','Trigger event'],['clear','LAY','Clear event'],['empty','LAY','Empty selection'],
+  ['encodings','LAY','Encoding channels'],['nearest','LAY','Nearest selection'],
+];
+
+const IS_MODES = [
+  {
+    id: 'field', label: 'FIELD',
+    re: /"field"\s*:\s*"([^"]*)$/,
+    items(q) {
+      if (!userData?.length) return [];
+      return Object.keys(userData[0]).filter(f => f.toLowerCase().includes(q.toLowerCase()));
+    },
+    icon(item) {
+      const t = (buildFTMap())[item] || 'N';
+      return { text: t, cls: 'field-type ft-' + t };
+    }
+  },
+  {
+    id: 'type', label: 'TYPE',
+    re: /"type"\s*:\s*"([^"]*)$/,
+    items(q) { return [...VL_TYPES, ...MARK_TYPES].filter(t => t.startsWith(q.toLowerCase())); },
+    icon(item) { return { text: VL_TYPES.includes(item) ? 'VL' : '▌', cls: 'is-icon' }; }
+  },
+  {
+    id: 'aggregate', label: 'AGGREGATE',
+    re: /"aggregate"\s*:\s*"([^"]*)$/,
+    items(q) { return AGGREGATES.filter(a => a.startsWith(q.toLowerCase())); },
+    icon() { return { text: 'ƒ', cls: 'is-icon' }; }
+  },
+  {
+    id: 'timeUnit', label: 'TIME UNIT',
+    re: /"timeUnit"\s*:\s*"([^"]*)$/,
+    items(q) { return TIME_UNITS.filter(t => t.startsWith(q.toLowerCase())); },
+    icon() { return { text: '⏱', cls: 'is-icon' }; }
+  },
+  {
+    id: 'scheme', label: 'SCHEME',
+    re: /"scheme"\s*:\s*"([^"]*)$/,
+    items(q) { return COLOR_SCHEMES.filter(s => s.startsWith(q.toLowerCase())); },
+    icon() { return { text: '◐', cls: 'is-icon' }; }
+  },
+  // Key completion — must come LAST so value modes take priority
+  {
+    id: 'key', label: 'PROPERTY',
+    re: /(?:[{,][ \t]*\n?[ \t]*)"([^":\n\r]*)$/,
+    items(q) {
+      const ql = q.toLowerCase();
+      const seen = new Set();
+      return VL_KEYS
+        .filter(([k]) => k.toLowerCase().startsWith(ql) && !seen.has(k) && seen.add(k))
+        .map(([k]) => k);
+    },
+    icon(item) {
+      const entry = VL_KEYS.find(([k]) => k === item);
+      return { text: entry ? entry[1] : '{}', cls: 'is-icon' };
+    },
+    desc(item) {
+      const entry = VL_KEYS.find(([k]) => k === item);
+      return entry ? entry[2] : '';
+    }
+  },
+];
+
+let isState = { visible: false, mode: null, items: [], activeIdx: 0, query: '', insertStart: 0, insertEnd: 0 };
+let isNavigatingIS = false; // suppresses checkIntellisense during arrow key navigation
+const isPopup = document.getElementById('intellisense');
+let ftMapCache = null;
+
+function buildFTMap() {
+  if (ftMapCache) return ftMapCache;
+  if (!userData?.length) return {};
+  ftMapCache = {};
+  Object.keys(userData[0]).forEach(f => { ftMapCache[f] = guessType(userData.map(r => r[f])); });
+  return ftMapCache;
+}
+
+function checkIntellisense() {
+  if (!cmEditor) return;
+  const cursor = cmEditor.getCursor();
+  const pos    = cmEditor.indexFromPos(cursor);
+  const val    = cmEditor.getValue();
+  const before = val.slice(0, pos);
+
+  for (const mode of IS_MODES) {
+    const match = before.match(mode.re);
+    if (!match) continue;
+
+    const query = match[1] || '';
+    const list  = mode.items(query);
+    if (!list.length) { hideIS(); return; }
+
+    const after = val.slice(pos);
+    const trailMatch = after.match(/^([^",}\]\s]*)/);
+    const trail = trailMatch ? trailMatch[1] : '';
+
+    isState = {
+      visible: true, mode,
+      items: list, activeIdx: 0, query,
+      insertStart: pos - query.length,
+      insertEnd: pos + trail.length
+    };
+    renderIS();
+    positionIS();
+    return;
+  }
+  hideIS();
+}
+
+function positionIS() {
+  const coords = cmEditor.cursorCoords(true, 'window');
+  const x = coords.left;
+  let   y = coords.bottom + 3;
+  const popH = Math.min(315, isState.items.length * 35 + 42);
+  if (y + popH > window.innerHeight - 8) y = coords.top - popH - 3;
+  isPopup.style.left = Math.max(4, Math.min(x, window.innerWidth - 270)) + 'px';
+  isPopup.style.top  = Math.max(4, y) + 'px';
+}
+
+function commitIS(item) {
+  const { insertStart, insertEnd, mode } = isState;
+  const val   = cmEditor.getValue();
+  const after = val.slice(insertEnd);
+  let suffix = '';
+  if (mode.id === 'key') suffix = after.startsWith('"') ? '' : '": ';
+
+  const from = cmEditor.posFromIndex(insertStart);
+  const to   = cmEditor.posFromIndex(insertEnd);
+  cmEditor.replaceRange(item + suffix, from, to);
+  hideIS();
+  clearTimeout(renderTimer);
+  dot('spin');
+  renderTimer = setTimeout(renderSpec, 950);
+}
+
+function renderIS() {
+  const { mode, items, activeIdx, query } = isState;
+  const shown = items.slice(0, 20);
+  const matchType = mode.id === 'field' ? 'contains' : 'starts';
+  const moreCount = items.length - 20;
+
+  isPopup.innerHTML =
+    `<div class="is-head">
+       <span>${mode.label}</span>
+       <span class="is-head-count">${items.length > 20 ? '20 of ' + items.length : items.length} match${items.length !== 1 ? 'es' : ''}</span>
+     </div>` +
+    shown.map((item, i) => {
+      const { text, cls } = mode.icon(item);
+      const hl = hlIS(item, query, matchType);
+      const desc = mode.desc ? mode.desc(item) : '';
+      const right = desc
+        ? `<span class="is-desc">${desc}</span>`
+        : `<span class="is-keys">↵ Tab</span>`;
+      return `<div class="is-item${i === activeIdx ? ' active' : ''}" data-idx="${i}" data-item="${escAttr(item)}">
+        <span class="${cls}">${text}</span>
+        <span>${hl}</span>
+        ${right}
+      </div>`;
+    }).join('') +
+    (moreCount > 0 ? `<div class="is-item" style="color:var(--muted);font-size:9px;justify-content:center">+${moreCount} more — keep typing</div>` : '');
+
+  isPopup.querySelectorAll('.is-item[data-item]').forEach(el => {
+    el.addEventListener('mousedown', e => { e.preventDefault(); commitIS(el.dataset.item); });
+  });
+
+  isPopup.classList.remove('hidden');
+  // Ensure active item is visible
+  const activeEl = isPopup.querySelector('.is-item.active');
+  if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+}
+
+function hlIS(text, query, matchType) {
+  if (!query) return text;
+  const idx = matchType === 'contains'
+    ? text.toLowerCase().indexOf(query.toLowerCase())
+    : text.toLowerCase().startsWith(query.toLowerCase()) ? 0 : -1;
+  if (idx === -1) return text;
+  return text.slice(0, idx) +
+    `<span class="is-match">${text.slice(idx, idx + query.length)}</span>` +
+    text.slice(idx + query.length);
+}
+
+function escAttr(s) { return s.replace(/"/g, '&quot;'); }
+
+function hideIS() {
+  if (!isState.visible) return;
+  isState.visible = false;
+  isPopup.classList.add('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────
+async function renderSpec(cfgOverride = null) {
+  // Sync whichever buffer the user is actively editing (skip when cfgOverride provided)
+  if (cfgOverride === null) {
+    _syncSpecFromEditor();
+  }
+
+  if (!specBuffer.trim()) return;
+
+  let spec;
+  try { spec = JSON.parse(specBuffer); }
+  catch(e) { err("Spec: " + e.message); return; }
+
+  // Always render with the active theme — configBuffer is only used when
+  // the user is in config view AND has made manual edits
+  const activeCfg = _getActiveConfig();
+  let config = cfgOverride || activeCfg.cfg;
+  if (cfgOverride === null && activeEditorView === 'config') {
+    try { config = JSON.parse(configBuffer); }
+    catch(e) { /* fall back to active theme if config is mid-edit and invalid */ }
+  }
+
+  let renderableSpec = JSON.parse(JSON.stringify(spec));
+  _migrateSpecHlTxtCat(renderableSpec); // silently fix old _hl_cat text layers for this render
+  renderableSpec.config = config;
+
+  // ── Per-facet HL helper ──────────────────────────────────────
+  // Append facetField to every joinaggregate's groupby so Highlight Max/Min
+  // is computed within each facet partition rather than across all data.
+  const _injectFacet = (transforms, facetField) => {
+    if (!facetField || !Array.isArray(transforms)) return transforms;
+    return transforms.map(t => {
+      // aggregate, joinaggregate AND window all have groupby arrays that
+      // need the facet field so the computation runs per facet partition.
+      if (!t.joinaggregate && !t.aggregate && !t.window) return t;
+      const gb = Array.isArray(t.groupby) ? t.groupby.slice() : [];
+      if (!gb.includes(facetField)) gb.push(facetField);
+      return Object.assign({}, t, { groupby: gb });
+    });
+  };
+
+  // Flat spec + encoding.facet: HL transforms at root. Inject facet field
+  // into their groupby so the HL is computed per facet.
+  const flatFacetField = renderableSpec.encoding?.facet?.field;
+  if (flatFacetField && Array.isArray(renderableSpec.transform)) {
+    renderableSpec.transform = _injectFacet(renderableSpec.transform, flatFacetField);
+  }
+
+  // Outer-facet operator form (layered spec wrapped). Vega-Lite still trips on
+  // certain properties at the inner layered-spec level, so clean it up:
+  // - Push shared encoding down into each layer
+  // - Lift transforms to the outer root (with facet-field injection)
+  // - Strip properties that aren't valid on a nested LayerSpec (padding, view)
+  if (renderableSpec.facet && renderableSpec.spec) {
+    if (renderableSpec.spec.layer && renderableSpec.spec.encoding) {
+      const shared = renderableSpec.spec.encoding;
+      renderableSpec.spec.layer.forEach(l => { l.encoding = { ...shared, ...(l.encoding || {}) }; });
+      delete renderableSpec.spec.encoding;
+    }
+    if (Array.isArray(renderableSpec.spec.transform)) {
+      const injected = _injectFacet(renderableSpec.spec.transform, renderableSpec.facet.field);
+      renderableSpec.transform = (renderableSpec.transform || []).concat(injected);
+      delete renderableSpec.spec.transform;
+    }
+    // Vega-Lite's outer-facet compile path is extremely sensitive about
+    // what sits on the inner LayerSpec. Aggressively strip everything
+    // except `layer` (and optionally width/height which set cell size).
+    ['padding', 'view', 'title', 'description', 'spacing'].forEach(k => {
+      if (renderableSpec.spec[k] != null) {
+        renderableSpec[k] = renderableSpec.spec[k];
+        delete renderableSpec.spec[k];
+      }
+    });
+  }
+
+  if (userData) {
+    if (renderableSpec.data && renderableSpec.data.name === 'dataset') {
+      renderableSpec.data = { values: userData };
+    } else if (!renderableSpec.data) {
+      // No data at top level — inject directly
+      renderableSpec.data = { values: userData };
+    }
+  }
+
+  // Preserve fit dimensions if fit mode is active; otherwise fall back to auto-width.
+  // For the outer facet operator form, width/height belong inside spec.spec (per
+  // facet cell). autosize is NOT allowed on compound specs, so skip it there.
+  const isOuterFaceted = renderableSpec.facet && renderableSpec.spec;
+  const dimTarget = isOuterFaceted ? renderableSpec.spec : renderableSpec;
+  if (fitState.active) {
+    dimTarget.width = fitState.width;
+    if (fitState.height !== null) {
+      dimTarget.height = fitState.height;
+      if (!isOuterFaceted) dimTarget.autosize = { type: 'fit', contains: 'padding', resize: true };
+    }
+  } else if (!dimTarget.width && !dimTarget.resolve && !isOuterFaceted) {
+    const w = document.getElementById('preview-top').clientWidth - 40;
+    dimTarget.width = Math.max(200, w);
+  }
+
+  try {
+    dot('spin');
+    clearConsole();
+    if (embedResult) { try { embedResult.finalize(); } catch(_){} embedResult = null; }
+    vegaBox.innerHTML = '';
+
+    // Update preview background to match the config background
+    const previewBg = renderableSpec.config && renderableSpec.config.background
+      ? renderableSpec.config.background : '#0a0a0b';
+    document.getElementById('preview-top').style.background = previewBg;
+
+    const result = await vegaEmbed('#vega-container', renderableSpec, {
+      renderer: 'svg',
+      actions: false,
+    });
+    embedResult = result;
+    clearErr();
+    dot('ok');
+    _autoSyncMarkSection();
+
+    // Populate data table from the Vega view for URL/sample specs (no uploaded data)
+    if (!userData) populateDataTableFromView(result.view);
+    // The Vega view is now populated, so refresh any filter value widget
+    // that may be sitting empty waiting for data.
+    if (typeof _buildFilterValueWidget === 'function') _buildFilterValueWidget();
+  } catch(e) {
+    err("Render: " + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATA TABLE FROM VIEW
+// ─────────────────────────────────────────────────────────────
+async function populateDataTableFromView(view) {
+  // First try to get the raw URL from the spec so we fetch ALL columns
+  try {
+    const spec = JSON.parse(specBuffer);
+    const url  = spec.data && spec.data.url;
+    if (url) {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('fetch failed');
+      const txt = await resp.text();
+      let rows, fields;
+      if (url.endsWith('.csv') || url.includes('.csv?')) {
+        const r = Papa.parse(txt, { header: true, dynamicTyping: true, skipEmptyLines: true });
+        rows   = r.data;
+        fields = r.meta.fields || Object.keys(rows[0] || {});
+      } else {
+        const d = JSON.parse(txt);
+        rows   = Array.isArray(d) ? d : [d];
+        fields = rows.length ? Object.keys(rows[0]) : [];
+      }
+      if (rows.length && fields.length) {
+        _cachedRawFields = fields;   // cache full raw field list for dropdowns
+        _cachedRawRows   = rows;     // cache rows for distinct-value pickers
+        renderDataTable(rows, fields);
+        if (typeof _buildFilterValueWidget === 'function') _buildFilterValueWidget();
+        return;
+      }
+    }
+  } catch(_) {}
+
+  // Fallback: pull from Vega view (only used fields, but better than nothing)
+  try {
+    const candidates = ['source_0', 'source_1', 'data_0', 'data_1'];
+    let rows = null;
+    for (const name of candidates) {
+      try {
+        const d = view.data(name);
+        if (Array.isArray(d) && d.length) { rows = d; break; }
+      } catch(_) {}
+    }
+    if (!rows || !rows.length) return;
+    const fields = Object.keys(rows[0]).filter(k => !k.startsWith('_vg'));
+    _cachedRawFields = [...new Set(fields.map(k => _rawFieldName(k)))];
+    _cachedRawRows   = rows;
+    renderDataTable(rows, fields);
+    if (typeof _buildFilterValueWidget === 'function') _buildFilterValueWidget();
+  } catch(_) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────
+function formatJSON() {
+  try {
+    const formatted = JSON.stringify(JSON.parse(cmEditor.getValue()), null, 2);
+    suppressRender = true;
+    cmEditor.setValue(formatted);
+    suppressRender = false;
+    // Keep buffer in sync
+    if (activeEditorView === 'spec') specBuffer = formatted;
+    else configBuffer = formatted;
+    clearErr();
+  } catch(e) { err("JSON: " + e.message); }
+}
+
+function dot(state) {
+  statusDot.className = 'dot dot-' + state;
+}
+
+// ── Error line tracking ──
+let _errLine = null;          // currently marked line handle
+let _patchHighlightLines = []; // lines highlighted from last properties-panel patch
+
+function _getErrorCMPos(msg) {
+  // V8/Chrome: "at position N" or "... at position N of ..."
+  let m = msg.match(/at position (\d+)/i);
+  if (m) {
+    const idx = Math.min(parseInt(m[1]), cmEditor.getValue().length - 1);
+    return cmEditor.posFromIndex(idx);
+  }
+  // Firefox: "line N column N"
+  m = msg.match(/line (\d+) column (\d+)/i);
+  if (m) return { line: parseInt(m[1]) - 1, ch: parseInt(m[2]) - 1 };
+  return null;
+}
+
+function _markErrorLine(pos) {
+  if (!cmEditor || pos === null) return;
+  const line = Math.max(0, Math.min(pos.line, cmEditor.lineCount() - 1));
+  _errLine = line;
+  cmEditor.addLineClass(line, 'background', 'cm-error-line-bg');
+  cmEditor.addLineClass(line, 'wrap',       'cm-error-line-wrap');
+  const marker = document.createElement('div');
+  marker.className = 'cm-error-gutter-marker';
+  marker.title = 'Format error on this line';
+  cmEditor.setGutterMarker(line, 'CodeMirror-error-gutter', marker);
+  // Scroll the error line into view
+  cmEditor.scrollIntoView({ line, ch: 0 }, 80);
+}
+
+function _clearErrorLine() {
+  if (!cmEditor || _errLine === null) return;
+  cmEditor.removeLineClass(_errLine, 'background', 'cm-error-line-bg');
+  cmEditor.removeLineClass(_errLine, 'wrap',       'cm-error-line-wrap');
+  cmEditor.setGutterMarker(_errLine, 'CodeMirror-error-gutter', null);
+  _errLine = null;
+}
+
+function _clearPatchHighlight() {
+  if (!cmEditor || _patchHighlightLines.length === 0) return;
+  _patchHighlightLines.forEach(line => {
+    cmEditor.removeLineClass(line, 'background', 'cm-patch-highlight-bg');
+    cmEditor.removeLineClass(line, 'wrap',       'cm-patch-highlight-wrap');
+  });
+  _patchHighlightLines = [];
+}
+
+function _applyPatchHighlight(oldText, newText) {
+  if (!cmEditor) return;
+  const oldLines = oldText.split('\n');
+  const newLines = newText.split('\n');
+  const m = oldLines.length, n = newLines.length;
+  let toHighlight;
+
+  if (m <= 400 && n <= 400) {
+    // LCS diff: only mark lines that are genuinely new/changed, not just shifted.
+    // Normalise by stripping trailing commas so JSON formatting artefacts
+    // (e.g. a comma added to the line above a new property) are not flagged.
+    const norm = s => (s ? s.trimEnd().replace(/,$/, '') : s);
+    const oldN = oldLines.map(norm);
+    const newN = newLines.map(norm);
+    const dp = Array.from({ length: m + 1 }, () => new Int16Array(n + 1));
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = oldN[i - 1] === newN[j - 1]
+          ? dp[i - 1][j - 1] + 1
+          : Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+    const inLCS = new Set();
+    let i = m, j = n;
+    while (i > 0 && j > 0) {
+      if (oldN[i - 1] === newN[j - 1]) { inLCS.add(j - 1); i--; j--; }
+      else if (dp[i - 1][j] >= dp[i][j - 1]) i--;
+      else j--;
+    }
+    toHighlight = new Set();
+    for (let k = 0; k < n; k++) { if (!inLCS.has(k)) toHighlight.add(k); }
+  } else {
+    // Fallback for very large specs: simple positional diff
+    toHighlight = new Set();
+    for (let i = 0; i < n; i++) { if (oldLines[i] !== newLines[i]) toHighlight.add(i); }
+  }
+
+  toHighlight.forEach(line => {
+    if (line < cmEditor.lineCount()) {
+      cmEditor.addLineClass(line, 'background', 'cm-patch-highlight-bg');
+      cmEditor.addLineClass(line, 'wrap',       'cm-patch-highlight-wrap');
+      _patchHighlightLines.push(line);
+    }
+  });
+  if (_patchHighlightLines.length > 0) {
+    cmEditor.scrollIntoView({ line: _patchHighlightLines[0], ch: 0 }, 80);
+  }
+}
+
+function err(msg) {
+  errorBar.textContent = msg;
+  errorBar.classList.remove('hidden');
+  dot('err');
+  _clearErrorLine();
+  if (msg.startsWith('Spec:') || msg.startsWith('Config:')) {
+    _markErrorLine(_getErrorCMPos(msg));
+  }
+}
+
+function clearErr() {
+  errorBar.textContent = '';
+  errorBar.classList.add('hidden');
+  _clearErrorLine();
+}
+
+// ─────────────────────────────────────────────────────────────
+// PROPERTIES PANEL
+// ─────────────────────────────────────────────────────────────
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const willOpen = !el.classList.contains('open');
+  // Accordion: when opening a section, close every other sibling section
+  // inside the same props panel so only one is expanded at a time.
+  if (willOpen && el.parentElement) {
+    el.parentElement.querySelectorAll('.props-section.open').forEach(s => {
+      if (s !== el) s.classList.remove('open');
+    });
+  }
+  el.classList.toggle('open');
+}
+
+// Collapse/expand the whole panel
+document.getElementById('props-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('props-panel');
+  panel.classList.toggle('collapsed');
+  document.getElementById('props-toggle-icon').textContent =
+    panel.classList.contains('collapsed') ? '▶' : '◀';
+});
+
+// One-shot migration: any text layer still encoding colour as field:'_hl_cat' (written by
+// older code) is renamed to '_hl_txt_cat' and given the matching calculate transform.
+// This lets old saved specs render without "Conflicting scale property" warnings.
+// The function is idempotent — re-running it on an already-migrated spec is a no-op.
+function _migrateSpecHlTxtCat(spec) {
+  if (!spec.layer) return;
+  let migrated = false;
+  spec.layer.forEach(lyr => {
+    if (lyr.name === '_hl_layer') return;
+    if (_markType(lyr.mark) !== 'text') return;
+    if (lyr.encoding?.color?.field !== '_hl_cat') return;
+    // Rename the colour field
+    lyr.encoding.color = { ...lyr.encoding.color, field: '_hl_txt_cat' };
+    // Upgrade size condition tests: _hl_cat → _hl_txt_cat so they survive aggregation groupby
+    if (Array.isArray(lyr.encoding.size?.condition)) {
+      lyr.encoding.size.condition.forEach(c => {
+        if (c.test?.includes('_hl_cat') && !c.test?.includes('_hl_txt_cat')) {
+          c.test = c.test.replace(/_hl_cat/g, '_hl_txt_cat');
+        }
+      });
+    }
+    // Ensure the calculate transform is present (deduped)
+    lyr.transform = (lyr.transform || []).filter(t => t.as !== '_hl_txt_cat');
+    lyr.transform.push({ calculate: "datum['_hl_cat']", as: '_hl_txt_cat' });
+    migrated = true;
+  });
+  // Also ensure resolve: independent whenever a text HL layer is present
+  if (migrated || spec.layer.some(lyr => lyr.encoding?.color?.field === '_hl_txt_cat')) {
+    spec.resolve = spec.resolve || {};
+    spec.resolve.scale = spec.resolve.scale || {};
+    spec.resolve.scale.color = 'independent';
+  }
+}
+
+// Patch the spec in-place, update the editor, and re-render
+// After any patchSpec mutation, keep every layer's HL_NRM colour entry in sync with
+// that layer's own mark colour.  The old single-findIndex approach always synced the
+// first _hl_cat layer (usually the bar layer) and never updated the text layer, so
+// text label normal colour diverged as soon as mark.color was changed separately.
+function _syncHlNormalColor(spec) {
+  const cfg = (_getActiveConfig()).cfg;
+  function _syncOne(enc, markSrc) {
+    const domain = enc.color?.scale?.domain;
+    const range  = enc.color?.scale?.range;
+    if (!domain || !range) return;
+    const nrmIdx = domain.indexOf(HL_NRM);
+    if (nrmIdx < 0) return;
+    const markObj = _markObj(markSrc?.mark);
+    range[nrmIdx] = markObj?.color || cfg.mark?.color || '#4a90d9';
+  }
+  if (spec.layer) {
+    // Update every non-_hl_layer that carries bar-style or text-style HL colour encoding
+    spec.layer.forEach(lyr => {
+      if (lyr.name !== '_hl_layer' &&
+          (lyr.encoding?.color?.field === '_hl_cat' || lyr.encoding?.color?.field === '_hl_txt_cat')) {
+        _syncOne(lyr.encoding, lyr);
+      }
+    });
+    return;
+  }
+  // Flat spec: root encoding holds the scale
+  if (spec.encoding?.color?.field === '_hl_cat') _syncOne(spec.encoding, spec);
+}
+
+function patchSpec(fn) {
+  _syncSpecFromEditor();
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { return; }
+  // When the spec is in the outer-facet operator form ({facet, spec: {...}}),
+  // editing operations target the inner spec — that's where encoding, mark,
+  // layer, transform etc. actually live. applyFacetProp uses patchRootSpec()
+  // when it needs to wrap/unwrap at the true root.
+  fn(_viewSpec(spec));
+  _migrateSpecHlTxtCat(_viewSpec(spec));
+  _syncHlNormalColor(_viewSpec(spec));
+  _updateEditorAndRender(spec, true);
+}
+
+function patchRootSpec(fn) {
+  _syncSpecFromEditor();
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { return; }
+  fn(spec);
+  _migrateSpecHlTxtCat(_viewSpec(spec));
+  _syncHlNormalColor(_viewSpec(spec));
+  _updateEditorAndRender(spec, true);
+}
+
+// Return the "editable root" of a spec. When the spec uses the outer facet
+// operator form — { facet: {...}, spec: {...} } — editing panels should
+// target the inner spec, where encoding/mark/layer actually live.
+function _viewSpec(spec) {
+  return (spec && spec.facet && spec.spec) ? spec.spec : spec;
+}
+
+// Keys that stay at the true root when wrapping into outer-facet form.
+// Kept minimal — only things that must live at the chart-document root
+// (the spec identifier, the data reference, and the config). Everything
+// else (title, layout, encoding, transforms, layers) goes into spec.spec
+// so existing panels that read/write the inner view keep working.
+const _FACET_ROOT_KEYS = new Set(['$schema', 'data', 'config', 'usermeta']);
+
+function _isLayeredSpec(spec) {
+  return !!(spec.layer || spec.hconcat || spec.vconcat || spec.concat || spec.repeat);
+}
+
+// Convert a flat-or-layered spec into { $schema, data, ..., facet, spec: <inner> }
+// in place, preserving object identity so the caller's mutations land in the
+// same object the editor serializes.
+function _wrapAsOuterFacet(root, facetDef) {
+  const inner = {};
+  const outer = {};
+  Object.entries(root).forEach(([k, v]) => {
+    if (_FACET_ROOT_KEYS.has(k)) outer[k] = v;
+    else inner[k] = v;
+  });
+  Object.keys(root).forEach(k => delete root[k]);
+  Object.assign(root, outer);
+  root.facet = facetDef;
+  root.spec  = inner;
+}
+
+// Reverse of _wrapAsOuterFacet: unwrap back to a single-level spec in place.
+function _unwrapOuterFacet(root) {
+  if (!root.facet || !root.spec) return;
+  const inner = root.spec;
+  const outer = {};
+  Object.entries(root).forEach(([k, v]) => { if (k !== 'facet' && k !== 'spec') outer[k] = v; });
+  Object.keys(root).forEach(k => delete root[k]);
+  Object.assign(root, outer, inner);
+}
+
+// Lightweight live-preview update for rapid input events (colour pickers while dragging).
+// Updates configBuffer only — does NOT touch the editor so patchConfig (onchange) can
+// compute a proper old→new diff and show highlight marks.
+let _liveConfigTimer = null;
+function _liveConfigUpdate(fn) {
+  try {
+    const cfg = JSON.parse(configBuffer);
+    fn(cfg);
+    configBuffer = JSON.stringify(cfg, null, 2);
+    // Pass cfg directly to renderSpec so it doesn't re-read from the editor
+    clearTimeout(_liveConfigTimer);
+    _liveConfigTimer = setTimeout(() => renderSpec(cfg), 80);
+  } catch(_) {}
+}
+
+function patchConfig(fn) {
+  let cfg;
+  try { cfg = JSON.parse(configBuffer); } catch(e) { err("Config: " + e.message); return; }
+  fn(cfg);
+  const oldText = activeEditorView === 'config' ? cmEditor.getValue() : configBuffer;
+  configBuffer = JSON.stringify(cfg, null, 2);
+  if (activeEditorView === 'config') {
+    _clearPatchHighlight();
+    suppressRender = true;
+    cmEditor.setValue(configBuffer);
+    suppressRender = false;
+    _applyPatchHighlight(oldText, configBuffer);
+  }
+  renderSpec();
+}
+
+// Read configBuffer and populate the config properties panel controls
+function syncConfigProps() {
+  let cfg;
+  try { cfg = JSON.parse(configBuffer); } catch(e) { return; }
+
+  // CANVAS
+  const bg = cfg.background;
+  if (bg && /^#[0-9a-fA-F]{6}$/.test(bg))
+    document.getElementById('cp-background').value = bg;
+  const vs = cfg.view?.stroke;
+  const chkVs = document.getElementById('chk-view-stroke');
+  if (vs && /^#[0-9a-fA-F]{6}$/.test(vs)) {
+    document.getElementById('cp-view-stroke').value = vs;
+    if (chkVs) chkVs.checked = true;
+  } else {
+    if (chkVs) chkVs.checked = false;
+  }
+
+  // TYPOGRAPHY
+  const fontSel = document.getElementById('cp-font');
+  if (cfg.font) {
+    // Try exact match first, then partial
+    let matched = false;
+    for (const opt of fontSel.options) {
+      if (opt.value === cfg.font) { fontSel.value = cfg.font; matched = true; break; }
+    }
+    if (!matched) {
+      for (const opt of fontSel.options) {
+        if (cfg.font.startsWith(opt.value.split(',')[0])) { fontSel.value = opt.value; break; }
+      }
+    }
+  }
+
+  // MARKS
+  const mc = cfg.mark?.color || cfg.bar?.color || cfg.line?.color || cfg.point?.color || cfg.arc?.color;
+  const mcInput = document.getElementById('cp-mark-color');
+  if (mc && /^#[0-9a-fA-F]{6}$/.test(mc)) mcInput.value = mc;
+  mcInput.oninput = () => {
+    const v = mcInput.value;
+    _liveConfigUpdate(c => { ['mark','bar','line','point','arc'].forEach(k => { if(!c[k])c[k]={}; c[k].color=v; }); });
+  };
+  mcInput.onchange = () => {
+    const v = mcInput.value;
+    patchConfig(c => { ['mark','bar','line','point','arc'].forEach(k => { if(!c[k])c[k]={}; c[k].color=v; }); });
+  };
+
+  // PALETTE
+  buildPaletteSwatches(cfg);
+
+  // AXES
+  const ax = cfg.axis || {};
+  if (ax.labelColor && /^#[0-9a-fA-F]{6}$/.test(ax.labelColor))
+    document.getElementById('cp-axis-label-color').value = ax.labelColor;
+  if (ax.titleColor && /^#[0-9a-fA-F]{6}$/.test(ax.titleColor))
+    document.getElementById('cp-axis-title-color').value = ax.titleColor;
+  if (ax.gridColor && /^#[0-9a-fA-F]{6}$/.test(ax.gridColor))
+    document.getElementById('cp-axis-grid-color').value = ax.gridColor;
+  if (ax.domainColor && /^#[0-9a-fA-F]{6}$/.test(ax.domainColor))
+    document.getElementById('cp-axis-domain-color').value = ax.domainColor;
+  if (ax.labelFontSize) document.getElementById('cp-axis-label-size').value = ax.labelFontSize;
+  else document.getElementById('cp-axis-label-size').value = '';
+  if (ax.titleFontSize) document.getElementById('cp-axis-title-size').value = ax.titleFontSize;
+  else document.getElementById('cp-axis-title-size').value = '';
+
+  // LEGEND
+  const lg = cfg.legend || {};
+  if (lg.labelColor && /^#[0-9a-fA-F]{6}$/.test(lg.labelColor))
+    document.getElementById('cp-legend-label-color').value = lg.labelColor;
+  if (lg.labelFontSize) document.getElementById('cp-legend-label-size').value = lg.labelFontSize;
+  else document.getElementById('cp-legend-label-size').value = '';
+
+  // TITLE
+  const tl = cfg.title || {};
+  if (tl.color && /^#[0-9a-fA-F]{6}$/.test(tl.color))
+    document.getElementById('cp-title-color').value = tl.color;
+  if (tl.fontSize) document.getElementById('cp-title-font-size').value = tl.fontSize;
+  else document.getElementById('cp-title-font-size').value = '';
+  if (tl.anchor) document.getElementById('cp-title-anchor').value = tl.anchor;
+}
+
+// Build (or rebuild) the palette drag-and-drop colour swatches
+function buildPaletteSwatches(cfg) {
+  const container = document.getElementById('cp-palette');
+  container.innerHTML = '';
+
+  let colours = cfg.range?.category;
+  if (!Array.isArray(colours) || colours.length === 0) {
+    colours = ['#4c9be8','#e8834c','#50c878','#e84c4c','#c84ce8',
+                '#4ce8d2','#e8d14c','#7b68ee','#ff7f50','#20b2aa'];
+  }
+
+  let dragSrcIdx = null;
+
+  colours.forEach((col, i) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'cfg-swatch';
+    swatch.style.background = col;
+    swatch.draggable = true;
+    swatch.dataset.idx = i;
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    // Coerce colour to 6-digit hex for the input
+    try {
+      const tmp = document.createElement('canvas').getContext('2d');
+      if (tmp) { tmp.fillStyle = col; picker.value = tmp.fillStyle; }
+      else picker.value = /^#[0-9a-fA-F]{6}$/.test(col) ? col : '#4c9be8';
+    } catch(_) {
+      picker.value = /^#[0-9a-fA-F]{6}$/.test(col) ? col : '#4c9be8';
+    }
+
+    picker.addEventListener('input', () => {
+      swatch.style.background = picker.value;
+      const v = picker.value;
+      _liveConfigUpdate(cfg => {
+        if (!cfg.range) cfg.range = {};
+        if (!Array.isArray(cfg.range.category)) cfg.range.category = colours.slice();
+        cfg.range.category[i] = v;
+        colours[i] = v;
+      });
+    });
+    picker.addEventListener('change', () => {
+      swatch.style.background = picker.value;
+      const v = picker.value;
+      patchConfig(cfg => {
+        if (!cfg.range) cfg.range = {};
+        if (!Array.isArray(cfg.range.category)) cfg.range.category = colours.slice();
+        cfg.range.category[i] = v;
+        colours[i] = v;
+      });
+    });
+
+    swatch.addEventListener('dragstart', e => {
+      dragSrcIdx = +swatch.dataset.idx;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    swatch.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      swatch.classList.add('drag-over');
+    });
+    swatch.addEventListener('dragleave', () => swatch.classList.remove('drag-over'));
+    swatch.addEventListener('drop', e => {
+      e.preventDefault();
+      swatch.classList.remove('drag-over');
+      const destIdx = +swatch.dataset.idx;
+      if (dragSrcIdx === null || dragSrcIdx === destIdx) return;
+      patchConfig(cfg => {
+        if (!cfg.range) cfg.range = {};
+        if (!Array.isArray(cfg.range.category)) cfg.range.category = colours.slice();
+        const arr = cfg.range.category;
+        const [moved] = arr.splice(dragSrcIdx, 1);
+        arr.splice(destIdx, 0, moved);
+      });
+      // Rebuild swatches with the new order
+      syncConfigProps();
+    });
+
+    swatch.appendChild(picker);
+    container.appendChild(swatch);
+  });
+}
+
+// Read the current spec + active theme and populate every control
+function syncPropsFromSpec() {
+  let root, spec;
+  try { root = JSON.parse(specBuffer); } catch(e) { return; }
+  spec = _viewSpec(root);  // all the panels below read from the inner spec when outer-faceted
+  const cfg = (_getActiveConfig()).cfg;
+
+  // ── TITLE ────────────────────────────────────
+  const tv = spec.title;
+  const defaultTitleColor = cfg.title && cfg.title.color ? cfg.title.color : '#e4e4e8';
+  let syncedTitleColor = defaultTitleColor;
+  if (typeof tv === 'string') {
+    document.getElementById('pp-title-text').value         = tv;
+    document.getElementById('pp-title-sub').value          = '';
+    document.getElementById('pp-title-size').value         = '';
+    document.getElementById('pp-title-color').value        = defaultTitleColor;
+    document.getElementById('pp-title-sub-size').value     = '';
+    document.getElementById('pp-title-sub-color').value    = defaultTitleColor;
+    document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
+  } else if (tv && typeof tv === 'object') {
+    syncedTitleColor = tv.color || defaultTitleColor;
+    document.getElementById('pp-title-text').value         = tv.text     || '';
+    document.getElementById('pp-title-sub').value          = tv.subtitle || '';
+    document.getElementById('pp-title-size').value         = tv.fontSize || '';
+    document.getElementById('pp-title-color').value        = syncedTitleColor;
+    document.getElementById('pp-title-sub-size').value     = tv.subtitleFontSize || '';
+    document.getElementById('pp-title-sub-color').value    = tv.subtitleColor || syncedTitleColor;
+    document.getElementById('pp-title-anchor').value       = tv.anchor || (cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start');
+  } else {
+    document.getElementById('pp-title-text').value         = '';
+    document.getElementById('pp-title-sub').value          = '';
+    document.getElementById('pp-title-size').value         = '';
+    document.getElementById('pp-title-color').value        = defaultTitleColor;
+    document.getElementById('pp-title-sub-size').value     = '';
+    document.getElementById('pp-title-sub-color').value    = defaultTitleColor;
+    document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
+  }
+  // Reset the sync tracker so the title→subtitle colour link works correctly after a template switch
+  document.getElementById('pp-title-color').dataset.lastSync = syncedTitleColor;
+
+  // ── X AXIS / Y AXIS — fully dynamic rebuild ──────────────────
+  rebuildAxisSection(spec, 'x');
+  rebuildAxisSection(spec, 'y');
+
+  // ── MARKS ─ dynamic rebuild ───────────────────
+  rebuildMarkSection(spec);
+
+  // ── LEGEND ────────────────────────────────────
+  const colEnc = (spec.encoding && spec.encoding.color) ? spec.encoding.color : {};
+  const leg    = colEnc.legend;
+  document.getElementById('pp-legend-show').checked   = (leg !== null && leg !== false);
+  const legO   = (leg && typeof leg === 'object') ? leg : {};
+  document.getElementById('pp-legend-orient').value   = legO.orient || 'right';
+
+  // ── LAYOUT ────────────────────────────────────
+  // Width/height live on the inner spec (per chart / per facet cell); padding
+  // is always chart-level on the true root.
+  document.getElementById('pp-width').value    = (typeof spec.width === 'number') ? spec.width : '';
+  document.getElementById('pp-height').value   = (typeof spec.height === 'number') ? spec.height : '';
+  document.getElementById('pp-padding').value  = root.padding != null ? root.padding : '';
+  document.getElementById('pp-bg-color').value = cfg.background || '#020d18';
+
+  // ── TRANSFORM / FACET / SORT ─────────────────
+  // syncTransformPanel needs the true root so it can read spec.facet when
+  // the chart is in outer-facet form.
+  syncTransformPanel(root);
+}
+
+// ── Apply helpers ─────────────────────────────────────────────
+function applyTitleProps() {
+  patchSpec(spec => {
+    const text    = document.getElementById('pp-title-text').value.trim();
+    const sub     = document.getElementById('pp-title-sub').value.trim();
+    const sz      = document.getElementById('pp-title-size').value;
+    const col     = document.getElementById('pp-title-color').value;
+    const subSz   = document.getElementById('pp-title-sub-size').value;
+    const subCol  = document.getElementById('pp-title-sub-color').value;
+    const anc     = document.getElementById('pp-title-anchor').value;
+    if (!text && !sub) { delete spec.title; return; }
+    spec.title = { text: text || '' };
+    if (sub)             spec.title.subtitle          = sub;
+    if (sz)              spec.title.fontSize          = parseInt(sz);
+    if (col)             spec.title.color             = col;
+    if (sub && subSz)  spec.title.subtitleFontSize = parseInt(subSz);
+    if (sub && subCol) spec.title.subtitleColor   = subCol;
+    if (anc !== 'start') spec.title.anchor            = anc;
+  });
+}
+
+function applyAxisProps(axis) {
+  patchSpec(spec => {
+    const enc = _resolveAxisEnc(spec, axis);
+    if (!enc) return;
+    const show = document.getElementById('pp-' + axis + '-show').checked;
+    if (!show) {
+      // Cache current axis object so it can be restored when shown again
+      if (enc.axis && typeof enc.axis === 'object') enc._axisCache = enc.axis;
+      enc.axis = null; return;
+    }
+    const labels    = document.getElementById('pp-' + axis + '-labels').checked;
+    const showTitle = document.getElementById('pp-' + axis + '-title').checked;
+    const grid      = document.getElementById('pp-' + axis + '-grid').checked;
+    const domain    = document.getElementById('pp-' + axis + '-domain').checked;
+    const ticks     = document.getElementById('pp-' + axis + '-ticks').checked;
+    const ttxt      = document.getElementById('pp-' + axis + '-title-text').value.trim();
+    // Restore from cache if axis was hidden, otherwise use existing; preserves unmanaged props (offset, format, etc.)
+    const existing = (enc.axis && typeof enc.axis === 'object') ? enc.axis
+                   : (enc._axisCache && typeof enc._axisCache === 'object') ? enc._axisCache : {};
+    delete enc._axisCache;
+    const axObj = { ...existing };
+    if (!labels)    axObj.labels = false; else delete axObj.labels;
+    if (!showTitle) axObj.title  = null;  else if (ttxt) axObj.title = ttxt; else delete axObj.title;
+    if (!grid)      axObj.grid   = false; else delete axObj.grid;
+    if (!domain)    axObj.domain = false; else delete axObj.domain;
+    if (!ticks)     axObj.ticks  = false; else delete axObj.ticks;
+    if (Object.keys(axObj).length === 0) delete enc.axis;
+    else enc.axis = axObj;
+  });
+}
+
+// Build a tooltip fields array from the current spec encoding (for the active layer/view)
+function _buildTooltipFields(spec, layerIdx, concatIdx) {
+  let target = spec;
+  if (concatIdx !== null) {
+    const views = spec.vconcat || spec.hconcat || spec.concat;
+    if (views?.[concatIdx]) target = views[concatIdx];
+  }
+  const rootEnc  = target.encoding || {};
+  const layerEnc = (layerIdx !== null && target.layer?.[layerIdx]?.encoding) || {};
+  const enc = { ...rootEnc, ...layerEnc };
+
+  const fields = [];
+  const seen = new Set();
+  for (const ch of ['x','y','color','size','shape','text','detail']) {
+    const e = enc[ch];
+    if (!e?.field || seen.has(e.field)) continue;
+    seen.add(e.field);
+    const entry = { field: e.field };
+    if (e.type)      entry.type   = e.type;
+    if (e.aggregate) entry.aggregate = e.aggregate;
+    entry.title  = e.title  || e.field;
+    entry.format = e.format || '';
+    fields.push(entry);
+  }
+  return fields.length ? fields : true;
+}
+
+// Resolve the encoding object for a given axis channel, searching root → concat views → layers
+function _resolveAxisEnc(spec, axis) {
+  if (spec.encoding?.[axis]) return spec.encoding[axis];
+  const views = spec.vconcat || spec.hconcat || spec.concat;
+  if (views) {
+    for (const view of views) {
+      if (view.encoding?.[axis]) return view.encoding[axis];
+      if (view.layer) {
+        for (const lyr of view.layer) {
+          if (lyr.encoding?.[axis]) return lyr.encoding[axis];
+        }
+      }
+    }
+  }
+  if (spec.layer) {
+    for (const lyr of spec.layer) {
+      if (lyr.encoding?.[axis]) return lyr.encoding[axis];
+    }
+  }
+  return null;
+}
+
+// ── Axis section dynamic rebuild ──────────────────────────────
+
+// Like _resolveAxisEnc but ONLY checks root spec and concat views — not layers.
+// Used by the axis section to know whether it owns the encoding or layers do.
+function _resolveRootAxisEnc(spec, axis) {
+  if (spec.encoding?.[axis]) return spec.encoding[axis];
+  const views = spec.vconcat || spec.hconcat || spec.concat;
+  if (views) {
+    for (const v of views) {
+      if (v.encoding?.[axis]) return v.encoding[axis];
+    }
+  }
+  return null;
+}
+
+// Fingerprint of root-level x/y encoding — used to know when to rebuild axis sections.
+function _axisSig(spec) {
+  spec = _viewSpec(spec);
+  const e = ax => { const enc = _resolveRootAxisEnc(spec, ax); return enc ? `${enc.field||''}:${enc.type||''}:${enc.aggregate||''}` : '-'; };
+  return e('x') + '|' + e('y');
+}
+
+// Write a property to the root-level encoding for the given axis channel.
+function _applyRootAxisEncProp(axis, prop, value) {
+  patchSpec(spec => {
+    let enc = null;
+    if (spec.encoding?.[axis]) enc = spec.encoding[axis];
+    else {
+      const views = spec.vconcat || spec.hconcat || spec.concat;
+      if (views) { for (const v of views) { if (v.encoding?.[axis]) { enc = v.encoding[axis]; break; } } }
+    }
+    if (!enc) return;
+    if (value === null || value === undefined || value === '') delete enc[prop];
+    else enc[prop] = value;
+  });
+}
+
+// Build Field / Type / Aggregate rows into `body` for an encoding object.
+// `onWrite(prop, value)` is called when any control changes.
+function _buildEncFieldRows(enc, fields, onWrite, body) {
+  const makeRow = (label, ctrl) => {
+    const row = document.createElement('div'); row.className = 'prop-row';
+    row.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: label }));
+    const c = document.createElement('div'); c.className = 'prop-ctrl'; c.appendChild(ctrl);
+    row.appendChild(c); body.appendChild(row);
+  };
+  const makeSel = (options, current, onChange) => {
+    const sel = document.createElement('select');
+    const blank = document.createElement('option'); blank.value = ''; blank.textContent = '—'; sel.appendChild(blank);
+    options.forEach(o => {
+      const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
+      if (o === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => onChange(sel.value || null));
+    return sel;
+  };
+  // Field
+  const fSel = document.createElement('select');
+  const fBlank = document.createElement('option'); fBlank.value=''; fBlank.textContent='—'; fSel.appendChild(fBlank);
+  fields.forEach(f => {
+    const o = document.createElement('option'); o.value = f; o.textContent = f;
+    if (f === (enc.field || '')) o.selected = true;
+    fSel.appendChild(o);
+  });
+  fSel.addEventListener('change', () => onWrite('field', fSel.value || null));
+  makeRow('Field', fSel);
+  // Type
+  makeRow('Type',      makeSel(['quantitative','ordinal','nominal','temporal'], enc.type||'',      v => onWrite('type', v)));
+  // Aggregate
+  makeRow('Aggregate', makeSel(['sum','mean','count','min','max','median','q1','q3'], enc.aggregate||'', v => onWrite('aggregate', v)));
+}
+
+// Common format options for axis labels and text marks.
+const AXIS_FMT_OPTIONS = [
+  ['', 'Auto'], [',.0f', '1,234'], [',.1f', '1,234.5'], ['.1%', '12.3%'], ['.2s', '1.2M'],
+  ['$,.0f', '$1,234'], ['$,.2f', '$1,234.56'], ['.3f', '1.234'],
+];
+// Date format options (d3-time-format) — used when an axis is temporal or has a timeUnit.
+const AXIS_DATE_FMT_OPTIONS = [
+  ['', 'Auto'],
+  ['%Y', '2024'],
+  ['%b %Y', 'Jan 2024'],
+  ['%B %Y', 'January 2024'],
+  ['%b %d', 'Jan 15'],
+  ['%d %b %Y', '15 Jan 2024'],
+  ['%Y-%m-%d', '2024-01-15'],
+  ['%m/%d/%Y', '01/15/2024'],
+  ['%d/%m/%Y', '15/01/2024'],
+  ['%H:%M', '14:30'],
+];
+
+function rebuildAxisSection(spec, axis) {
+  // When the chart is outer-faceted, axis encodings live in spec.spec.
+  spec = _viewSpec(spec);
+  const sectionId = axis === 'x' ? 'ps-xaxis' : 'ps-yaxis';
+  const body = document.querySelector('#' + sectionId + ' .props-section-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  const fields  = _getDataFields();
+  const rootEnc = _resolveRootAxisEnc(spec, axis);   // root/concat-view level only
+  const anyEnc  = _resolveAxisEnc(spec, axis) || {}; // first found (any level)
+
+  // ── Encoding controls (root level) ──────────────────────────
+  if (rootEnc) {
+    if (fields.length) {
+      _buildEncFieldRows(rootEnc, fields, (prop, value) => {
+        _applyRootAxisEncProp(axis, prop, value);
+        // Rebuild immediately in non-live mode (no render cycle fires)
+        if (!liveMode) { try { rebuildAxisSection(JSON.parse(specBuffer), axis); } catch(_) {} }
+      }, body);
+    }
+    const dispDiv = document.createElement('div');
+    dispDiv.className = 'props-subsection-divider'; dispDiv.textContent = 'Axis display';
+    body.appendChild(dispDiv);
+  } else if (spec.layer || spec.vconcat || spec.hconcat || spec.concat) {
+    // Encoding is per-layer — editing happens in the Marks section
+    const hint = document.createElement('div'); hint.className = 'prop-row';
+    hint.style.cssText = 'font-size:11px;color:var(--muted);padding:2px 0 6px;';
+    hint.textContent = 'Encoding per layer — edit in Marks';
+    body.appendChild(hint);
+  }
+
+  // ── Display controls ─────────────────────────────────────────
+  // Only show if there's actually an encoding for this axis somewhere in the spec
+  if (!anyEnc.field && !rootEnc) return;
+
+  const aO = (anyEnc.axis && typeof anyEnc.axis === 'object') ? anyEnc.axis : {};
+
+  const mkChkRow = (label, id, checked) => {
+    const row = document.createElement('div'); row.className = 'prop-row';
+    row.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: label }));
+    const c = document.createElement('div'); c.className = 'prop-ctrl';
+    const chk = document.createElement('input'); chk.type = 'checkbox'; chk.id = id; chk.checked = checked;
+    chk.style.accentColor = 'var(--accent)';
+    chk.addEventListener('change', () => applyAxisProps(axis));
+    c.appendChild(chk); row.appendChild(c); body.appendChild(row);
+  };
+  const mkTxtRow = (label, id, value, placeholder) => {
+    const row = document.createElement('div'); row.className = 'prop-row';
+    row.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: label }));
+    const c = document.createElement('div'); c.className = 'prop-ctrl';
+    const inp = document.createElement('input'); inp.type = 'text'; inp.id = id; inp.value = value; inp.placeholder = placeholder;
+    inp.addEventListener('change', () => applyAxisProps(axis));
+    c.appendChild(inp); row.appendChild(c); body.appendChild(row);
+  };
+
+  mkChkRow('Show axis',   'pp-'+axis+'-show',   anyEnc.axis !== null && anyEnc.axis !== false);
+  mkChkRow('Show labels', 'pp-'+axis+'-labels', aO.labels !== false);
+  mkChkRow('Show title',  'pp-'+axis+'-title',  anyEnc.title !== null && aO.title !== null && aO.title !== false);
+  mkChkRow('Grid lines',  'pp-'+axis+'-grid',   aO.grid !== false);
+  mkChkRow('Domain line', 'pp-'+axis+'-domain', aO.domain !== false);
+  mkChkRow('Tick marks',  'pp-'+axis+'-ticks',  aO.ticks !== false);
+  mkTxtRow('Title text',  'pp-'+axis+'-title-text',
+    typeof aO.title === 'string' ? aO.title : (typeof anyEnc.title === 'string' ? anyEnc.title : ''), 'auto');
+
+  // Format row — writes to enc.axis.format inline (not through applyAxisProps).
+  // Use date formats when the axis is temporal or has a timeUnit, number formats otherwise.
+  const isTimeAxis = anyEnc.type === 'temporal' || !!anyEnc.timeUnit;
+  const fmtOptions = isTimeAxis ? AXIS_DATE_FMT_OPTIONS : AXIS_FMT_OPTIONS;
+  const fmtRow = document.createElement('div'); fmtRow.className = 'prop-row';
+  fmtRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Format' }));
+  const fmtCtrl = document.createElement('div'); fmtCtrl.className = 'prop-ctrl';
+  const fmtSel  = document.createElement('select');
+  const curFmt  = aO.format || '';
+  fmtOptions.forEach(([val, lbl]) => {
+    const o = document.createElement('option'); o.value = val; o.textContent = lbl;
+    if (val === curFmt) o.selected = true;
+    fmtSel.appendChild(o);
+  });
+  fmtSel.addEventListener('change', () => {
+    patchSpec(spec => {
+      const enc = _resolveAxisEnc(spec, axis);
+      if (!enc) return;
+      if (enc.axis === null || enc.axis === false) return; // axis hidden — don't add format
+      if (!enc.axis || typeof enc.axis !== 'object') enc.axis = {};
+      if (fmtSel.value) {
+        enc.axis.format = fmtSel.value;
+        // For date formats on non-temporal axes (e.g. ordinal+timeUnit), we need
+        // to tell Vega-Lite explicitly to use the time formatter.
+        if (isTimeAxis) enc.axis.formatType = 'time';
+        else delete enc.axis.formatType;
+      } else {
+        delete enc.axis.format;
+        delete enc.axis.formatType;
+      }
+    });
+  });
+  fmtCtrl.appendChild(fmtSel); fmtRow.appendChild(fmtCtrl); body.appendChild(fmtRow);
+
+  // Label offset row
+  const offRow = document.createElement('div'); offRow.className = 'prop-row';
+  offRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: axis === 'x' ? 'Label Y offset' : 'Label X offset' }));
+  const offCtrl = document.createElement('div'); offCtrl.className = 'prop-ctrl';
+  const offSel  = document.createElement('select');
+  const offProp = 'offset';
+  const curOff  = aO[offProp] != null ? aO[offProp] : '';
+  [['', 'Auto'], [5, '5px'], [10, '10px'], [15, '15px']].forEach(([val, lbl]) => {
+    const o = document.createElement('option'); o.value = val; o.textContent = lbl;
+    if (String(val) === String(curOff)) o.selected = true;
+    offSel.appendChild(o);
+  });
+  offSel.addEventListener('change', () => {
+    patchSpec(spec => {
+      const enc = _resolveAxisEnc(spec, axis);
+      if (!enc) return;
+      if (enc.axis === null || enc.axis === false) return;
+      if (!enc.axis || typeof enc.axis !== 'object') enc.axis = {};
+      if (offSel.value !== '') enc.axis[offProp] = +offSel.value;
+      else delete enc.axis[offProp];
+    });
+  });
+  offCtrl.appendChild(offSel); offRow.appendChild(offCtrl); body.appendChild(offRow);
+
+  _lastAxisSig = _axisSig(spec);
+}
+
+// ── Dynamic mark helpers ───────────────────────────────────────
+function _markType(mark) {
+  return (typeof mark === 'string' ? mark : (mark && mark.type)) || 'bar';
+}
+function _markObj(mark) {
+  return (typeof mark === 'object' && mark !== null) ? mark : {};
+}
+function _markSig(spec) {
+  spec = _viewSpec(spec);
+  // Include which layers carry their own x/y encoding so the section rebuilds
+  // when a layer gains or loses its own axis encoding (not just when mark type changes).
+  const lyrSig = l => _markType(l.mark) + (l.encoding?.x ? 'X' : '') + (l.encoding?.y ? 'Y' : '');
+  const views = spec && (spec.vconcat || spec.hconcat || spec.concat);
+  if (views) return 'concat:' + views.map(v => v.layer ? v.layer.map(lyrSig).join('+') : _markType(v.mark)).join(',');
+  if (spec && spec.layer) return 'layer:' + spec.layer.map(lyrSig).join(',');
+  return spec ? _markType(spec.mark) : '';
+}
+
+function _buildLayerTabs(layers) {
+  const wrap = document.createElement('div');
+  wrap.className = 'mark-layer-tabs';
+
+  const swapLayers = (fromIdx, toIdx) => {
+    patchSpec(spec => {
+      if (!spec.layer || toIdx < 0 || toIdx >= spec.layer.length) return;
+      const tmp = spec.layer[fromIdx];
+      spec.layer[fromIdx] = spec.layer[toIdx];
+      spec.layer[toIdx] = tmp;
+      selectedLayerIdx = toIdx;
+    });
+  };
+
+  layers.forEach((layer, i) => {
+    if (layer.name === '_hl_layer') return;
+    const tabWrap = document.createElement('div');
+    tabWrap.className = 'mark-layer-tab-wrap';
+
+    const leftArr = document.createElement('button');
+    leftArr.className = 'mark-layer-arrow';
+    leftArr.textContent = '◀';
+    leftArr.title = 'Move layer earlier (behind)';
+    leftArr.style.visibility = i === 0 ? 'hidden' : '';
+    leftArr.onclick = (e) => { e.stopPropagation(); swapLayers(i, i - 1); };
+
+    const btn = document.createElement('button');
+    btn.className = 'mark-layer-tab' + (i === selectedLayerIdx ? ' active' : '');
+    btn.textContent = `L${i + 1}: ${_markType(layer.mark).toUpperCase()}`;
+    btn.onclick = () => {
+      selectedLayerIdx = i;
+      try { rebuildMarkSection(JSON.parse(specBuffer)); } catch(_) {}
+    };
+
+    const rightArr = document.createElement('button');
+    rightArr.className = 'mark-layer-arrow';
+    rightArr.textContent = '▶';
+    rightArr.title = 'Move layer later (in front)';
+    rightArr.style.visibility = i === layers.length - 1 ? 'hidden' : '';
+    rightArr.onclick = (e) => { e.stopPropagation(); swapLayers(i, i + 1); };
+
+    tabWrap.appendChild(leftArr);
+    tabWrap.appendChild(btn);
+    tabWrap.appendChild(rightArr);
+    wrap.appendChild(tabWrap);
+  });
+  return wrap;
+}
+
+function _buildConcatTabs(views) {
+  const wrap = document.createElement('div');
+  wrap.className = 'mark-layer-tabs';
+  views.forEach((view, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'mark-layer-tab' + (i === selectedConcatIdx ? ' active' : '');
+    const label = view.layer
+      ? view.layer.map(l => _markType(l.mark).toUpperCase()).join('+')
+      : _markType(view.mark).toUpperCase();
+    btn.textContent = `V${i + 1}: ${label}`;
+    btn.onclick = () => {
+      selectedConcatIdx = i;
+      selectedLayerIdx = 0;
+      try { rebuildMarkSection(JSON.parse(specBuffer)); } catch(_) {}
+    };
+    wrap.appendChild(btn);
+  });
+  return wrap;
+}
+
+function _getDataFields() {
+  // Prefer the full raw field cache populated from the original URL fetch or uploaded data.
+  // source_0 from the Vega view only has the aggregated/transformed columns the current spec
+  // uses, so it loses fields as soon as the spec changes — making dropdowns appear empty.
+  if (_cachedRawFields.length) return _cachedRawFields;
+  if (userData?.length) return Object.keys(userData[0]);
+  if (!embedResult?.view) return [];
+  // Fallback: read from Vega view (only used fields, but better than nothing)
+  for (const name of ['source_0', 'source_1']) {
+    try {
+      const d = embedResult.view.data(name);
+      if (Array.isArray(d) && d.length) {
+        const keys = Object.keys(d[0]).filter(k => !k.startsWith('_vg'));
+        return [...new Set(keys.map(k => _rawFieldName(k)))];
+      }
+    } catch(_) {}
+  }
+  return [];
+}
+
+// Strip common Vega-Lite aggregate prefixes (e.g. mean_yield → yield)
+function _rawFieldName(f) {
+  const aggs = ['mean','sum','min','max','count','median','q1','q3','distinct','valid','missing','stderr','stdev','variance'];
+  for (const a of aggs) if (f.startsWith(a + '_')) return f.slice(a.length + 1);
+  return f;
+}
+
+function _buildCtrlEl(def, markObj) {
+  const wrap = document.createElement('div');
+  wrap.className = 'prop-ctrl';
+  let el;
+  const val = markObj[def.prop];
+
+  if (def.ctrl === 'color') {
+    el = document.createElement('input');
+    el.type = 'color';
+    el.value = val || def.default || '#00b4d8';
+  } else if (def.ctrl === 'range') {
+    el = document.createElement('input');
+    el.type = 'range';
+    el.min = def.min ?? 0; el.max = def.max ?? 1; el.step = def.step ?? 0.05;
+    el.value = val != null ? val : (def.default ?? 1);
+    el.style.accentColor = 'var(--accent)';
+  } else if (def.ctrl === 'checkbox') {
+    el = document.createElement('input');
+    el.type = 'checkbox';
+    el.style.accentColor = 'var(--accent)';
+    if (def.prop === 'point' || def.prop === 'tooltip')
+                              el.checked = val === true || (typeof val === 'object' && val !== null);
+    else                      el.checked = val != null ? !!val : def.default !== false;
+  } else if (def.ctrl === 'select') {
+    el = document.createElement('select');
+    // Leading "unset" option — selected when the property is absent from the mark spec.
+    // Choosing it back removes the property, letting Vega-Lite use its own default.
+    const blankOpt = document.createElement('option');
+    blankOpt.value = ''; blankOpt.textContent = '—';
+    if (val == null || val === '') blankOpt.selected = true;
+    el.appendChild(blankOpt);
+    (def.options || []).forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      if (val != null && val !== '' && String(val) === String(o)) opt.selected = true;
+      el.appendChild(opt);
+    });
+  } else if (def.ctrl === 'strokedash') {
+    el = document.createElement('select');
+    const currentStr = Array.isArray(val) ? val.join(',') : '';
+    [['','Solid'],['4,2','— Dashed'],['8,4','— Long dash'],['2,2','··· Dotted'],['8,2,2,2','—·— Dash-dot']].forEach(([v, lbl]) => {
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = lbl;
+      if (v === currentStr) opt.selected = true;
+      el.appendChild(opt);
+    });
+  } else {                          // number
+    el = document.createElement('input');
+    el.type = 'number';
+    if (def.min  != null) el.min  = def.min;
+    if (def.max  != null) el.max  = def.max;
+    if (def.step != null) el.step = def.step;
+    if (def.placeholder)  el.placeholder = def.placeholder;
+    if (val != null)      el.value = val;
+  }
+  wrap.appendChild(el);
+  return { wrap, el };
+}
+
+// ── HIGHLIGHT MAX / MIN ───────────────────────────────────────────────
+
+// Default highlight colours are drawn from the active theme's category palette
+// so each theme gets a complementary pair without any hardcoding.
+function _hlDefaultColors() {
+  const cfg = (_getActiveConfig()).cfg;
+  const cat = cfg.range?.category || [];
+  return {
+    maxColor: cat[1] || '#e05252',
+    minColor: cat[3] || '#5289e0'
+  };
+}
+
+const HL_MARKS      = new Set(['bar','line','tick','rule','point','circle','square']); // bar = bar & column charts
+const HL_LINE_MARKS = new Set(['line','area','trail']); // use point-overlay layer approach
+const HL_SIZE_MARKS = new Set(['point','circle','square']); // marks where size encoding is meaningful
+const HL_MAX = '__hl_max__', HL_MIN = '__hl_min__', HL_NRM = '__hl_normal__';
+const HL_SIZE_HIGHLIGHT = 200, HL_SIZE_NORMAL = 60;
+
+// Detect the quantitative field (and groupby fields) from the spec encoding.
+// For layered specs, root encoding is inherited by all layers, so merge both.
+function _detectHlInfo(spec, layerIdx) {
+  const rootEnc  = spec.encoding || {};
+  const layerEnc = (layerIdx !== null && spec.layer?.[layerIdx]?.encoding) || {};
+  const enc = { ...rootEnc, ...layerEnc }; // layer-specific overrides root
+  for (const ch of ['x','y','theta','radius','size']) {
+    const e = enc[ch];
+    if (e && e.type === 'quantitative' && e.field) {
+      // Build the groupby list. For fields with a timeUnit (e.g. yearmonth on
+      // a temporal x axis) we group by the derived bucket, not the raw field —
+      // otherwise "max" would be computed across raw rows (e.g. per-day) and
+      // not across the bucketed groups the bars actually represent.
+      const groupby = [];
+      const groupbyDerive = [];
+      Object.entries(enc).forEach(([k, v]) => {
+        if (k === ch || k === 'color') return;
+        if (!v?.field || v.type === 'quantitative' || v.aggregate) return;
+        if (v.timeUnit) {
+          const derived = `_hl_tu_${v.timeUnit}_${v.field}`;
+          groupby.push(derived);
+          groupbyDerive.push({ timeUnit: v.timeUnit, field: v.field, as: derived });
+        } else {
+          groupby.push(v.field);
+        }
+      });
+      return { field: e.field, aggregate: e.aggregate || null, groupby, groupbyDerive, channel: ch };
+    }
+  }
+  return null;
+}
+
+// Read current highlight state from the root spec (works for both bar and line styles)
+function _readHlState(spec) {
+  // Line-style: highlight lives in a named _hl_layer
+  const hlLayer = spec.layer?.find(l => l.name === '_hl_layer');
+  if (hlLayer?.encoding?.color?.field === '_hl_cat') {
+    const domain = hlLayer.encoding.color.scale?.domain || [];
+    const range  = hlLayer.encoding.color.scale?.range  || [];
+    const pick   = (d, def) => { const i = domain.indexOf(d); return i >= 0 ? range[i] : def; };
+    const defs = _hlDefaultColors();
+    const hlSize = (hlLayer.mark?.size ?? 100) > 100;
+    return { active: true, hlMax: domain.includes(HL_MAX), hlMin: domain.includes(HL_MIN),
+             maxColor: pick(HL_MAX, defs.maxColor), minColor: pick(HL_MIN, defs.minColor), hlSize };
+  }
+  // Bar-style: highlight lives in spec.encoding.color OR a layer's encoding.color
+  // (addLayer moves it into the layer when converting flat → layered)
+  let enc = spec.encoding || {};
+  if (enc.color?.field !== '_hl_cat' && spec.layer) {
+    const barLayer = spec.layer.find(l => l.name !== '_hl_layer' && l.encoding?.color?.field === '_hl_cat');
+    if (barLayer) enc = barLayer.encoding;
+  }
+  const active = enc.color?.field === '_hl_cat';
+  const domain = active ? (enc.color.scale?.domain || []) : [];
+  const range  = active ? (enc.color.scale?.range  || []) : [];
+  const pick   = (d, def) => { const i = domain.indexOf(d); return i >= 0 ? range[i] : def; };
+  const defs = _hlDefaultColors();
+  const hlSize = enc.size?.field === '_hl_cat';
+  return { active, hlMax: domain.includes(HL_MAX), hlMin: domain.includes(HL_MIN),
+           maxColor: pick(HL_MAX, defs.maxColor), minColor: pick(HL_MIN, defs.minColor), hlSize };
+}
+
+// Strip all highlight state from spec (transforms, color encoding, injected layer)
+function _removeHlFromSpec(spec) {
+  // Remove _hl_* transforms
+  if (spec.transform) {
+    spec.transform = spec.transform.filter(t => {
+      if (t.joinaggregate?.some(j => j.as?.startsWith('_hl_'))) return false;
+      if (t.as === '_hl_cat') return false;
+      return true;
+    });
+    if (!spec.transform.length) delete spec.transform;
+  }
+  // Remove _hl_cat / _hl_txt_cat colour/size from root encoding and all non-hl layers
+  // (covers bar-style root encoding, bar-layer encoding, and text-layer field/condition encodings)
+  if (spec.encoding?.color?.field === '_hl_cat') delete spec.encoding.color;
+  if (spec.encoding?.size?.field === '_hl_cat') delete spec.encoding.size;
+  spec.layer?.forEach(l => {
+    if (l.name === '_hl_layer' || !l.encoding) return;
+    ['color', 'size'].forEach(ch => {
+      const enc = l.encoding[ch];
+      if (!enc) return;
+      if (enc.field === '_hl_cat' || enc.field === '_hl_txt_cat') { delete l.encoding[ch]; return; }
+      const conds = Array.isArray(enc.condition) ? enc.condition : enc.condition ? [enc.condition] : [];
+      if (conds.some(c => c.test?.includes('_hl_cat') || c.test?.includes('_hl_txt_cat'))) delete l.encoding[ch];
+    });
+    // Remove _hl_txt_cat calculate transform from text layers
+    if (l.transform) {
+      l.transform = l.transform.filter(t => t.as !== '_hl_txt_cat');
+      if (!l.transform.length) delete l.transform;
+    }
+  });
+  // Remove the independent-scale resolve added for text-layer label highlight (legacy cleanup)
+  if (spec.resolve?.scale?.color === 'independent') {
+    delete spec.resolve.scale.color;
+    if (!Object.keys(spec.resolve.scale).length) delete spec.resolve.scale;
+    if (spec.resolve && !Object.keys(spec.resolve).length) delete spec.resolve;
+  }
+  // Remove line-style injected overlay layer, unwrapping if we created the layer spec
+  if (spec.layer) {
+    const hlIdx = spec.layer.findIndex(l => l.name === '_hl_layer');
+    if (hlIdx >= 0) spec.layer.splice(hlIdx, 1);
+    if (spec._hlWrapped && spec.layer.length === 1) {
+      const only = spec.layer[0];
+      if (only.mark      !== undefined) spec.mark     = only.mark;
+      if (only.encoding  !== undefined) spec.encoding = only.encoding;
+      delete spec.layer;
+      delete spec._hlWrapped;
+    }
+  }
+}
+
+// When the spec is layered, the joinaggregate runs at root on ALL data, but data filters
+// (e.g. datum.symbol === 'GOOG') may live only on the source layer.  Lift those filters
+// to root so the joinaggregate sees the same data as the chart.
+function _liftLayerFilters(spec, layerIdx) {
+  if (layerIdx === null || !spec.layer?.[layerIdx]) return;
+  const filtersToLift = (spec.layer[layerIdx].transform || [])
+    .filter(t => !_isHlTransform(t) && t.filter !== undefined);
+  if (!filtersToLift.length) return;
+  spec.transform = spec.transform || [];
+  filtersToLift.forEach(f => {
+    const fStr = JSON.stringify(f);
+    if (!spec.transform.some(t => JSON.stringify(t) === fStr)) {
+      spec.transform.unshift(f); // prepend — must come before joinaggregate
+    }
+  });
+}
+
+// Bar/point/arc/tick style: colour encoding on the mark itself
+function _applyHlBarStyle(spec, layerIdx, hlMax, hlMin, maxColor, minColor, info, hlSize) {
+  const enc = (layerIdx !== null && spec.layer?.[layerIdx])
+    ? (spec.layer[layerIdx].encoding = spec.layer[layerIdx].encoding || {})
+    : (spec.encoding = spec.encoding || {});
+  const markSrc = (layerIdx !== null && spec.layer?.[layerIdx]) ? spec.layer[layerIdx] : spec;
+  const markObj = _markObj(markSrc.mark);
+  const markType = _markType(markSrc.mark);
+  const cfg = (_getActiveConfig()).cfg;
+  const normalColor = markObj.color || cfg.mark?.color || '#4a90d9';
+
+  if (!spec.transform) spec.transform = [];
+  _liftLayerFilters(spec, layerIdx);
+  let testField;
+  if (info.aggregate && info.groupby.length > 0) {
+    // Derive any timeUnit groupby fields first, so joinaggregate can groupby them.
+    (info.groupbyDerive || []).forEach(d =>
+      spec.transform.push({ timeUnit: d.timeUnit, field: d.field, as: d.as }));
+    const globalOps = [];
+    if (hlMax) globalOps.push({ op: 'max', field: '_hl_grp', as: '_hl_max' });
+    if (hlMin) globalOps.push({ op: 'min', field: '_hl_grp', as: '_hl_min' });
+    spec.transform.push(
+      { joinaggregate: [{ op: info.aggregate, field: info.field, as: '_hl_grp' }], groupby: info.groupby },
+      { joinaggregate: globalOps }
+    );
+    testField = '_hl_grp';
+  } else {
+    const ops = [];
+    if (hlMax) ops.push({ op: 'max', field: info.field, as: '_hl_max' });
+    if (hlMin) ops.push({ op: 'min', field: info.field, as: '_hl_min' });
+    spec.transform.push({ joinaggregate: ops });
+    testField = info.field;
+  }
+  const tf = `datum['${testField}']`;
+  spec.transform.push({ calculate:
+    hlMax && hlMin
+      ? `${tf}===datum['_hl_max']?'${HL_MAX}':${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`
+      : hlMax ? `${tf}===datum['_hl_max']?'${HL_MAX}':'${HL_NRM}'`
+              : `${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`,
+    as: '_hl_cat' });
+
+  const domain = [], range = [];
+  if (hlMax) { domain.push(HL_MAX); range.push(maxColor); }
+  if (hlMin) { domain.push(HL_MIN); range.push(minColor); }
+  domain.push(HL_NRM); range.push(normalColor);
+  enc.color = { field: '_hl_cat', type: 'nominal', scale: { domain, range }, legend: null };
+
+  if (hlSize && HL_SIZE_MARKS.has(markType)) {
+    const sd = [], sr = [];
+    if (hlMax) { sd.push(HL_MAX); sr.push(HL_SIZE_HIGHLIGHT); }
+    if (hlMin) { sd.push(HL_MIN); sr.push(HL_SIZE_HIGHLIGHT); }
+    sd.push(HL_NRM); sr.push(HL_SIZE_NORMAL);
+    enc.size = { field: '_hl_cat', type: 'nominal', scale: { domain: sd, range: sr }, legend: null };
+  }
+}
+
+// Line/area/trail style: inject a point overlay layer so the line stays unbroken
+function _applyHlLineStyle(spec, layerIdx, hlMax, hlMin, maxColor, minColor, info, hlSize) {
+  if (!spec.transform) spec.transform = [];
+  _liftLayerFilters(spec, layerIdx);
+  let testField;
+  if (info.aggregate && info.groupby?.length > 0) {
+    (info.groupbyDerive || []).forEach(d =>
+      spec.transform.push({ timeUnit: d.timeUnit, field: d.field, as: d.as }));
+    const globalOps = [];
+    if (hlMax) globalOps.push({ op: 'max', field: '_hl_grp', as: '_hl_max' });
+    if (hlMin) globalOps.push({ op: 'min', field: '_hl_grp', as: '_hl_min' });
+    spec.transform.push(
+      { joinaggregate: [{ op: info.aggregate, field: info.field, as: '_hl_grp' }], groupby: info.groupby },
+      { joinaggregate: globalOps }
+    );
+    testField = '_hl_grp';
+  } else {
+    const ops = [];
+    if (hlMax) ops.push({ op: 'max', field: info.field, as: '_hl_max' });
+    if (hlMin) ops.push({ op: 'min', field: info.field, as: '_hl_min' });
+    spec.transform.push({ joinaggregate: ops });
+    testField = info.field;
+  }
+
+  const tf = `datum['${testField}']`;
+  spec.transform.push({ calculate:
+    hlMax && hlMin
+      ? `${tf}===datum['_hl_max']?'${HL_MAX}':${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`
+      : hlMax ? `${tf}===datum['_hl_max']?'${HL_MAX}':'${HL_NRM}'`
+              : `${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`,
+    as: '_hl_cat' });
+
+  const domain = [], range = [];
+  if (hlMax) { domain.push(HL_MAX); range.push(maxColor); }
+  if (hlMin) { domain.push(HL_MIN); range.push(minColor); }
+
+  // Source encoding for x/y comes from the relevant layer (or root)
+  const srcEnc = (layerIdx !== null && spec.layer?.[layerIdx])
+    ? (spec.layer[layerIdx].encoding || spec.encoding || {})
+    : (spec.encoding || {});
+
+  const hlLayer = {
+    name: '_hl_layer',
+    transform: [{ filter: `datum['_hl_cat'] !== '${HL_NRM}'` }],
+    mark: { type: 'point', filled: true, size: hlSize ? HL_SIZE_HIGHLIGHT : 100 },
+    encoding: {
+      x: srcEnc.x, y: srcEnc.y,
+      color: { field: '_hl_cat', type: 'nominal', scale: { domain, range }, legend: null }
+    }
+  };
+
+  if (layerIdx === null || !spec.layer) {
+    // Flat spec (or layerIdx stale after a previous unwrap) → wrap into a layer spec
+    const mainLayer = {};
+    if (spec.mark     !== undefined) { mainLayer.mark     = spec.mark;     delete spec.mark; }
+    if (spec.encoding !== undefined) { mainLayer.encoding = spec.encoding; delete spec.encoding; }
+    spec.layer = [mainLayer, hlLayer];
+    spec._hlWrapped = true;
+  } else {
+    spec.layer.push(hlLayer);
+  }
+}
+
+// Dispatcher
+function _applyHlToSpec(spec, layerIdx, hlMax, hlMin, maxColor, minColor, hlSize) {
+  // Flat spec: simple path, no sibling layers to preserve
+  if (!spec.layer || layerIdx === null) {
+    _removeHlFromSpec(spec);
+    if (!hlMax && !hlMin) return;
+    const info = _detectHlInfo(spec, layerIdx);
+    if (!info) return;
+    const markType = _markType(spec.mark);
+    if (HL_LINE_MARKS.has(markType)) _applyHlLineStyle(spec, layerIdx, hlMax, hlMin, maxColor, minColor, info, hlSize);
+    else                              _applyHlBarStyle (spec, layerIdx, hlMax, hlMin, maxColor, minColor, info, hlSize);
+    return;
+  }
+
+  // Layered spec: save other active bar-style layers' highlight states before wiping
+  const defs = _hlDefaultColors();
+  const otherActive = [];
+  spec.layer.forEach((lyr, i) => {
+    if (i === layerIdx || lyr.name === '_hl_layer') return;
+    const enc = lyr.encoding || {};
+    if (enc.color?.field !== '_hl_cat' && enc.color?.field !== '_hl_txt_cat') return;
+    const domain = enc.color.scale?.domain || [];
+    const range  = enc.color.scale?.range  || [];
+    const pick = (d, def) => { const k = domain.indexOf(d); return k >= 0 ? range[k] : def; };
+    const entry = { layerIdx: i,
+      hlMax: domain.includes(HL_MAX), hlMin: domain.includes(HL_MIN),
+      maxColor: pick(HL_MAX, defs.maxColor), minColor: pick(HL_MIN, defs.minColor),
+      hlSize: enc.size?.field === '_hl_cat' };
+    // For text layers, snapshot the full text-HL encoding so custom font sizes are preserved
+    if (_markType(lyr.mark) === 'text') {
+      entry.textHlColor = JSON.parse(JSON.stringify(enc.color));
+      if (enc.size) entry.textHlSize = JSON.parse(JSON.stringify(enc.size));
+      // Also snapshot the _hl_txt_cat calculate transform so it can be restored
+      const txtCalc = (lyr.transform || []).find(t => t.as === '_hl_txt_cat');
+      if (txtCalc) entry.textHlTxtCatTransform = JSON.parse(JSON.stringify(txtCalc));
+    }
+    otherActive.push(entry);
+  });
+
+  _removeHlFromSpec(spec);
+
+  // _removeHlFromSpec may have unwrapped a _hlWrapped line spec back to flat —
+  // if so, fall back to the simple flat path so _applyHlLineStyle can re-wrap correctly.
+  if (!spec.layer) {
+    if (!hlMax && !hlMin) return;
+    const info = _detectHlInfo(spec, null);
+    if (!info) return;
+    const mt = _markType(spec.mark);
+    if (HL_LINE_MARKS.has(mt)) _applyHlLineStyle(spec, null, hlMax, hlMin, maxColor, minColor, info, hlSize);
+    else                        _applyHlBarStyle (spec, null, hlMax, hlMin, maxColor, minColor, info, hlSize);
+    return;
+  }
+
+  const toApply = [];
+  if (hlMax || hlMin) toApply.push({ layerIdx, hlMax, hlMin, maxColor, minColor, hlSize });
+  otherActive.forEach(s => toApply.push(s));
+  if (!toApply.length) return;
+
+  const info = _detectHlInfo(spec, toApply[0].layerIdx);
+  if (!info) return;
+
+  // Build shared root transforms once, covering the union of all layers' max/min needs
+  const anyMax = toApply.some(s => s.hlMax);
+  const anyMin = toApply.some(s => s.hlMin);
+  if (!spec.transform) spec.transform = [];
+  _liftLayerFilters(spec, toApply[0].layerIdx);
+  let testField;
+  if (info.aggregate && info.groupby?.length > 0) {
+    (info.groupbyDerive || []).forEach(d =>
+      spec.transform.push({ timeUnit: d.timeUnit, field: d.field, as: d.as }));
+    const gOps = [];
+    if (anyMax) gOps.push({ op: 'max', field: '_hl_grp', as: '_hl_max' });
+    if (anyMin) gOps.push({ op: 'min', field: '_hl_grp', as: '_hl_min' });
+    spec.transform.push(
+      { joinaggregate: [{ op: info.aggregate, field: info.field, as: '_hl_grp' }], groupby: info.groupby },
+      { joinaggregate: gOps }
+    );
+    testField = '_hl_grp';
+  } else {
+    const ops = [];
+    if (anyMax) ops.push({ op: 'max', field: info.field, as: '_hl_max' });
+    if (anyMin) ops.push({ op: 'min', field: info.field, as: '_hl_min' });
+    spec.transform.push({ joinaggregate: ops });
+    testField = info.field;
+  }
+  const tf = `datum['${testField}']`;
+  spec.transform.push({ calculate:
+    anyMax && anyMin
+      ? `${tf}===datum['_hl_max']?'${HL_MAX}':${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`
+      : anyMax ? `${tf}===datum['_hl_max']?'${HL_MAX}':'${HL_NRM}'`
+              : `${tf}===datum['_hl_min']?'${HL_MIN}':'${HL_NRM}'`,
+    as: '_hl_cat' });
+
+  // Apply independent per-layer colour encodings
+  const cfg = (_getActiveConfig()).cfg;
+  for (const s of toApply) {
+    const lyr = spec.layer[s.layerIdx];
+    if (!lyr) continue;
+    const lyrMarkType = _markType(lyr.mark);
+    if (HL_LINE_MARKS.has(lyrMarkType)) {
+      const domain = [], range = [];
+      if (s.hlMax) { domain.push(HL_MAX); range.push(s.maxColor); }
+      if (s.hlMin) { domain.push(HL_MIN); range.push(s.minColor); }
+      const srcEnc = lyr.encoding || spec.encoding || {};
+      spec.layer.push({
+        name: '_hl_layer',
+        transform: [{ filter: `datum['_hl_cat'] !== '${HL_NRM}'` }],
+        mark: { type: 'point', filled: true, size: s.hlSize ? HL_SIZE_HIGHLIGHT : 100 },
+        encoding: { x: srcEnc.x, y: srcEnc.y,
+          color: { field: '_hl_cat', type: 'nominal', scale: { domain, range }, legend: null } }
+      });
+    } else if (s.textHlColor) {
+      // Text layer with custom label-HL encoding — restore snapshot, normalising field name.
+      // Older snapshots may have field:'_hl_cat'; always promote to '_hl_txt_cat' so the
+      // text layer's colour scale never shares a field name with the bar layer's _hl_cat scale.
+      lyr.encoding = lyr.encoding || {};
+      lyr.encoding.color = { ...s.textHlColor, field: '_hl_txt_cat' };
+      if (s.textHlSize) lyr.encoding.size = s.textHlSize;
+      // Always ensure the _hl_txt_cat calculate transform is present on this layer
+      lyr.transform = (lyr.transform || []).filter(t => t.as !== '_hl_txt_cat');
+      lyr.transform.push(s.textHlTxtCatTransform || { calculate: "datum['_hl_cat']", as: '_hl_txt_cat' });
+      // Independent resolve: unique field names + independent resolve together eliminate
+      // both Vega field-level and Vega-Lite channel-level scale merging
+      spec.resolve = spec.resolve || {};
+      spec.resolve.scale = spec.resolve.scale || {};
+      spec.resolve.scale.color = 'independent';
+    } else {
+      const markObj = _markObj(lyr.mark);
+      const normalColor = markObj.color || cfg.mark?.color || '#4a90d9';
+      const domain = [], range = [];
+      if (s.hlMax) { domain.push(HL_MAX); range.push(s.maxColor); }
+      if (s.hlMin) { domain.push(HL_MIN); range.push(s.minColor); }
+      domain.push(HL_NRM); range.push(normalColor);
+      lyr.encoding = lyr.encoding || {};
+      lyr.encoding.color = { field: '_hl_cat', type: 'nominal', scale: { domain, range }, legend: null };
+      if (s.hlSize && HL_SIZE_MARKS.has(lyrMarkType)) {
+        const sd = [], sr = [];
+        if (s.hlMax) { sd.push(HL_MAX); sr.push(HL_SIZE_HIGHLIGHT); }
+        if (s.hlMin) { sd.push(HL_MIN); sr.push(HL_SIZE_HIGHLIGHT); }
+        sd.push(HL_NRM); sr.push(HL_SIZE_NORMAL);
+        lyr.encoding.size = { field: '_hl_cat', type: 'nominal', scale: { domain: sd, range: sr }, legend: null };
+      }
+    }
+  }
+}
+
+// ── Text-layer highlight label styling ─────────────────────────────────────
+
+// Read current colour/size overrides from the text layer's encodings.
+// Colour uses a field-based scale; size uses condition expressions (explicit value per condition).
+function _readTextHlState(spec, layerIdx) {
+  const enc = spec.layer?.[layerIdx]?.encoding || {};
+  // Colour — read from field-based scale domain/range
+  const domain     = enc.color?.scale?.domain || [];
+  const colorRange = enc.color?.scale?.range  || [];
+  const getColor = hl => { const i = domain.indexOf(hl); return i >= 0 ? colorRange[i] : null; };
+  // Size — read from condition expressions to match how _applyTextHlToSpec writes them
+  const sizeConds = Array.isArray(enc.size?.condition) ? enc.size.condition
+    : enc.size?.condition ? [enc.size.condition] : [];
+  const getSize = hl => {
+    // Test strings reference _hl_txt_cat (survives aggregation via groupby) not _hl_cat
+    const c = sizeConds.find(c => c.test === `datum['_hl_txt_cat'] === '${hl}'`);
+    return c?.value ?? null;
+  };
+  return {
+    maxColor: getColor(HL_MAX) || _hlDefaultColors().maxColor,
+    minColor: getColor(HL_MIN) || _hlDefaultColors().minColor,
+    maxSize:  getSize(HL_MAX)  ?? 13,
+    minSize:  getSize(HL_MIN)  ?? 13,
+  };
+}
+
+// Write field-based colour/size encodings onto a text layer.
+// Using field (not condition) forces Vega-Lite to include _hl_cat in the groupby,
+// so the field survives aggregation and is accessible in each aggregated row.
+function _applyTextHlToSpec(spec, layerIdx, maxColor, maxSize, minColor, minSize) {
+  if (layerIdx === null || !spec.layer?.[layerIdx]) return;
+  const layer = spec.layer[layerIdx];
+  layer.encoding = layer.encoding || {};
+  const enc = layer.encoding;
+  const hlSt = _readHlState(spec);
+  const markObj = _markObj(layer.mark);
+  const normalSize = markObj?.fontSize ?? 11;
+  const cfg = (_getActiveConfig()).cfg;
+  const normalColor = markObj?.color || cfg.mark?.color || '#e4e4e8';
+
+  // Clean up any _hlTxtFilter that earlier code versions may have written
+  const _hlTxtFilter = `datum['_hl_cat'] !== '${HL_NRM}'`;
+
+  if (!hlSt.active || (!hlSt.hlMax && !hlSt.hlMin)) {
+    delete enc.color; delete enc.size;
+    if (layer.transform) {
+      layer.transform = layer.transform.filter(t => t.filter !== _hlTxtFilter && t.as !== '_hl_txt_cat');
+      if (!layer.transform.length) delete layer.transform;
+    }
+    // Legacy cleanup: remove independent-scale resolve that older code versions may have written
+    if (spec.resolve?.scale?.color === 'independent') {
+      delete spec.resolve.scale.color;
+      if (!Object.keys(spec.resolve.scale).length) delete spec.resolve.scale;
+      if (spec.resolve && !Object.keys(spec.resolve).length) delete spec.resolve;
+    }
+    return;
+  }
+
+  // Clean up any stale filter/transform from earlier code versions before writing encodings
+  if (layer.transform) {
+    layer.transform = layer.transform.filter(t => t.filter !== _hlTxtFilter && t.as !== '_hl_txt_cat');
+    if (!layer.transform.length) delete layer.transform;
+  }
+
+  const domain = [], colorRange = [], sizeRange = [];
+  if (hlSt.hlMax) { domain.push(HL_MAX); colorRange.push(maxColor);  sizeRange.push(+maxSize); }
+  if (hlSt.hlMin) { domain.push(HL_MIN); colorRange.push(minColor);  sizeRange.push(+minSize); }
+  domain.push(HL_NRM); colorRange.push(normalColor); sizeRange.push(normalSize);
+
+  // Add a layer-level calculate that copies _hl_cat → _hl_txt_cat.
+  // This gives the text layer its own uniquely named field so Vega-Lite cannot merge
+  // its colour scale with the bar layer's _hl_cat scale (even with resolve: independent
+  // the same field name caused "Conflicting scale property" warnings).
+  layer.transform = layer.transform || [];
+  layer.transform.push({ calculate: "datum['_hl_cat']", as: '_hl_txt_cat' });
+
+  // Color stays field-based — this forces _hl_txt_cat into the groupby so it survives
+  // aggregation and is available for the size conditions below.
+  enc.color = { field: '_hl_txt_cat', type: 'ordinal', sort: null, scale: { domain, range: colorRange }, legend: null };
+  // Size uses explicit condition expressions instead of a scale, avoiding Vega-Lite's ordinal
+  // scale range-remapping which was causing max size to bleed into min and normal labels.
+  // Size conditions must test _hl_txt_cat (not _hl_cat) because _hl_txt_cat is the colour
+  // field and therefore included in the aggregation groupby — _hl_cat is NOT in the groupby
+  // and may be absent from aggregated rows, causing all conditions to silently evaluate false.
+  const sizeConds = [];
+  if (hlSt.hlMax) sizeConds.push({ test: `datum['_hl_txt_cat'] === '${HL_MAX}'`, value: +maxSize });
+  if (hlSt.hlMin) sizeConds.push({ test: `datum['_hl_txt_cat'] === '${HL_MIN}'`, value: +minSize });
+  enc.size = { condition: sizeConds, value: normalSize };
+  // With _hl_txt_cat as a unique field, independent resolve finally works — the different field
+  // names prevent Vega from merging the two layers' colour scales at the data-field level,
+  // while independent resolve prevents Vega-Lite from merging them at the channel level.
+  spec.resolve = spec.resolve || {};
+  spec.resolve.scale = spec.resolve.scale || {};
+  spec.resolve.scale.color = 'independent';
+}
+
+// Build the "Label highlight" sub-section for text marks
+function _buildTextHlControls(spec, layerIdx, body) {
+  if (layerIdx === null) return;
+  const hlSt = _readHlState(spec);
+  if (!hlSt.active || (!hlSt.hlMax && !hlSt.hlMin)) return;
+
+  const txSt = _readTextHlState(spec, layerIdx);
+
+  const divider = document.createElement('div');
+  divider.className = 'props-subsection-divider';
+  divider.textContent = 'Label highlight';
+  body.appendChild(divider);
+
+  let maxCol, maxSz, minCol, minSz;
+
+  function applyChange() {
+    patchSpec(s => _applyTextHlToSpec(
+      s, layerIdx,
+      maxCol?.value || _hlDefaultColors().maxColor, maxSz?.value || 13,
+      minCol?.value || _hlDefaultColors().minColor, minSz?.value || 13
+    ));
+    // Rebuild the mark section so the _common.color picker appears/disappears correctly
+    // depending on whether text HL is now active (encoding.color overrides mark.color).
+    // _autoSyncMarkSection won't trigger this since the mark type signature doesn't change.
+    try { rebuildMarkSection(JSON.parse(specBuffer)); } catch(_) {}
+  }
+
+  function buildRow(label, colorVal, sizeVal) {
+    const row = document.createElement('div');
+    row.className = 'prop-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'prop-label'; lbl.textContent = label;
+    row.appendChild(lbl);
+    const ctrl = document.createElement('div');
+    ctrl.className = 'prop-ctrl';
+    ctrl.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const col = document.createElement('input');
+    col.type = 'color'; col.value = colorVal;
+    col.style.cssText = 'width:36px;height:24px;flex-shrink:0;padding:1px 2px;';
+    col.addEventListener('input', applyChange);
+    const sz = document.createElement('input');
+    sz.type = 'number'; sz.value = sizeVal; sz.min = 6; sz.max = 72;
+    sz.placeholder = '13'; sz.style.cssText = 'flex:1;';
+    sz.addEventListener('change', applyChange);
+    ctrl.appendChild(col); ctrl.appendChild(sz);
+    row.appendChild(ctrl); body.appendChild(row);
+    return { col, sz };
+  }
+
+  if (hlSt.hlMax) ({ col: maxCol, sz: maxSz } = buildRow('Max label', txSt.maxColor, txSt.maxSize));
+  if (hlSt.hlMin) ({ col: minCol, sz: minSz } = buildRow('Min label', txSt.minColor, txSt.minSize));
+
+  // "Other" row — controls normal (non-highlighted) label colour.
+  // Replaces the _common.color picker which is hidden while text HL is active.
+  const txLayer = spec.layer?.[layerIdx];
+  const txNrmDomain = txLayer?.encoding?.color?.scale?.domain || [];
+  const txNrmRange  = txLayer?.encoding?.color?.scale?.range  || [];
+  const txNi = txNrmDomain.indexOf(HL_NRM);
+  const txCfg = (_getActiveConfig()).cfg;
+  const txNrmColor = txNi >= 0 ? txNrmRange[txNi]
+    : (_markObj(txLayer?.mark)?.color || txCfg.mark?.color || '#9ca3af');
+
+  const nrmTxRow = document.createElement('div');
+  nrmTxRow.className = 'prop-row';
+  nrmTxRow.appendChild(Object.assign(document.createElement('span'),
+    { className: 'prop-label', textContent: 'Other' }));
+  const nrmTxCtrl = document.createElement('div');
+  nrmTxCtrl.className = 'prop-ctrl';
+  nrmTxCtrl.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  const nrmTxCol = document.createElement('input');
+  nrmTxCol.type = 'color'; nrmTxCol.value = txNrmColor;
+  nrmTxCol.style.cssText = 'width:36px;height:24px;flex-shrink:0;padding:1px 2px;';
+  const nrmTxSz = document.createElement('input');
+  nrmTxSz.type = 'number'; nrmTxSz.min = 0; nrmTxSz.max = 72;
+  nrmTxSz.placeholder = String(_markObj(txLayer?.mark)?.fontSize ?? 11);
+  nrmTxSz.value = _markObj(txLayer?.mark)?.fontSize ?? '';
+  nrmTxSz.style.cssText = 'flex:1;';
+  const syncOther = () => {
+    patchSpec(s => {
+      const lyr = s.layer?.[layerIdx];
+      if (!lyr) return;
+      // Update the NRM range entry in the text layer's HL colour scale
+      const ni2 = lyr.encoding?.color?.scale?.domain?.indexOf(HL_NRM);
+      if (ni2 != null && ni2 >= 0) lyr.encoding.color.scale.range[ni2] = nrmTxCol.value;
+      // Sync enc.size.value (the non-highlighted font size used in the condition encoding)
+      if (Array.isArray(lyr.encoding?.size?.condition)) lyr.encoding.size.value = parseFloat(nrmTxSz.value) || 11;
+      // Keep mark.color / fontSize in sync so applyChange re-uses these when re-applying HL
+      if (typeof lyr.mark === 'string') lyr.mark = { type: lyr.mark, color: nrmTxCol.value };
+      else if (lyr.mark && typeof lyr.mark === 'object') {
+        lyr.mark.color = nrmTxCol.value;
+        const fsVal = parseFloat(nrmTxSz.value);
+        if (!isNaN(fsVal)) lyr.mark.fontSize = fsVal;
+      }
+    });
+  };
+  nrmTxCol.addEventListener('input', syncOther);
+  nrmTxSz.addEventListener('change', syncOther);
+  nrmTxCtrl.appendChild(nrmTxCol); nrmTxCtrl.appendChild(nrmTxSz);
+  nrmTxRow.appendChild(nrmTxCtrl);
+  body.appendChild(nrmTxRow);
+}
+
+// Read highlight state for a specific layer (not the first _hl_cat layer found)
+function _readLayerHlState(spec, layerIdx) {
+  const defs = _hlDefaultColors();
+  if (layerIdx !== null && spec.layer?.[layerIdx]) {
+    if (HL_LINE_MARKS.has(_markType(spec.layer[layerIdx].mark))) {
+      const hlLayer = spec.layer.find(l => l.name === '_hl_layer');
+      if (hlLayer?.encoding?.color?.field === '_hl_cat') {
+        const domain = hlLayer.encoding.color.scale?.domain || [];
+        const range  = hlLayer.encoding.color.scale?.range  || [];
+        const pick = (d, def) => { const i = domain.indexOf(d); return i >= 0 ? range[i] : def; };
+        const hlSize = (hlLayer.mark?.size ?? 100) > 100;
+        return { active: true, hlMax: domain.includes(HL_MAX), hlMin: domain.includes(HL_MIN),
+                 maxColor: pick(HL_MAX, defs.maxColor), minColor: pick(HL_MIN, defs.minColor), hlSize };
+      }
+      return { active: false, hlMax: false, hlMin: false, maxColor: defs.maxColor, minColor: defs.minColor, hlSize: false };
+    }
+    const enc = spec.layer[layerIdx].encoding || {};
+    const active = enc.color?.field === '_hl_cat' || enc.color?.field === '_hl_txt_cat';
+    const domain = active ? (enc.color.scale?.domain || []) : [];
+    const range  = active ? (enc.color.scale?.range  || []) : [];
+    const pick = (d, def) => { const i = domain.indexOf(d); return i >= 0 ? range[i] : def; };
+    const hlSize = enc.size?.field === '_hl_cat';
+    return { active, hlMax: domain.includes(HL_MAX), hlMin: domain.includes(HL_MIN),
+             maxColor: pick(HL_MAX, defs.maxColor), minColor: pick(HL_MIN, defs.minColor), hlSize };
+  }
+  return _readHlState(spec);
+}
+
+// Build the Highlight sub-section inside the marks panel
+function _buildHighlightControls(spec, layerIdx, body) {
+  const markType = (layerIdx !== null && spec.layer?.[layerIdx])
+    ? _markType(spec.layer[layerIdx].mark) : _markType(spec.mark);
+  if (!HL_MARKS.has(markType) || !_detectHlInfo(spec, layerIdx)) return;
+  // Exclude multi-line charts (line mark with a colour field = multiple series)
+  const enc = (layerIdx !== null && spec.layer?.[layerIdx])
+    ? (spec.layer[layerIdx].encoding || spec.encoding || {}) : (spec.encoding || {});
+  if (markType === 'line' && enc.color?.field && enc.color.field !== '_hl_cat') return;
+
+  const st = _readLayerHlState(spec, layerIdx);
+
+  const divider = document.createElement('div');
+  divider.className = 'props-subsection-divider';
+  divider.textContent = 'Highlight';
+  body.appendChild(divider);
+
+  // Resolve the current NRM colour for bar-style marks (not used by line-style HL)
+  const isLineStyleHl = HL_LINE_MARKS.has(markType);
+  let nrmColor = (() => {
+    const cfg = (_getActiveConfig()).cfg;
+    const mkSrc = (layerIdx !== null && spec.layer?.[layerIdx]) ? spec.layer[layerIdx] : spec;
+    const mkObj  = _markObj(mkSrc.mark);
+    if (!isLineStyleHl) {
+      const encSrc = mkSrc.encoding || (layerIdx !== null ? {} : spec.encoding || {});
+      const nrmDomain = encSrc.color?.scale?.domain || [];
+      const nrmRange  = encSrc.color?.scale?.range  || [];
+      const ni = nrmDomain.indexOf(HL_NRM);
+      if (ni >= 0) return nrmRange[ni];
+    }
+    return mkObj?.color || cfg.mark?.color || '#4a90d9';
+  })();
+
+  let maxChk, maxCol, minChk, minCol, nrmCol, sizeChk;
+  const canSize = HL_SIZE_MARKS.has(markType) || HL_LINE_MARKS.has(markType);
+  function applyHlChange() {
+    patchSpec(s => _applyHlToSpec(s, layerIdx, maxChk.checked, minChk.checked, maxCol.value, minCol.value, canSize && sizeChk?.checked));
+  }
+
+  function buildHlRow(label, checked, colorVal) {
+    const row = document.createElement('div');
+    row.className = 'prop-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'prop-label';
+    lbl.textContent = label;
+    row.appendChild(lbl);
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'prop-ctrl';
+    ctrl.style.cssText = 'display:flex;align-items:center;gap:6px;';
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.checked = checked;
+    chk.style.cssText = 'accent-color:var(--accent);flex-shrink:0;';
+
+    const col = document.createElement('input');
+    col.type = 'color'; col.value = colorVal;
+    col.style.cssText = `flex:1;height:24px;opacity:${checked ? 1 : 0.35};`;
+    col.disabled = !checked;
+
+    chk.addEventListener('change', () => {
+      col.disabled = !chk.checked;
+      col.style.opacity = chk.checked ? '1' : '0.35';
+      applyHlChange();
+    });
+    col.addEventListener('input', applyHlChange);
+
+    ctrl.appendChild(chk); ctrl.appendChild(col);
+    row.appendChild(ctrl);
+    body.appendChild(row);
+    return { chk, col };
+  }
+
+  ({ chk: maxChk, col: maxCol } = buildHlRow('Max value', st.hlMax, st.maxColor));
+  ({ chk: minChk, col: minCol } = buildHlRow('Min value', st.hlMin, st.minColor));
+
+  if (canSize) {
+    const sizeRow = document.createElement('div');
+    sizeRow.className = 'prop-row';
+    sizeRow.appendChild(Object.assign(document.createElement('span'),
+      { className: 'prop-label', textContent: 'Enlarge' }));
+    const sizeCtrl = document.createElement('div');
+    sizeCtrl.className = 'prop-ctrl';
+    sizeChk = document.createElement('input');
+    sizeChk.type = 'checkbox'; sizeChk.checked = st.hlSize;
+    sizeChk.style.cssText = 'accent-color:var(--accent);';
+    sizeChk.addEventListener('change', applyHlChange);
+    sizeCtrl.appendChild(sizeChk);
+    sizeRow.appendChild(sizeCtrl);
+    body.appendChild(sizeRow);
+  }
+
+  // Normal colour control — only for bar-style HL (line marks use mark.color directly)
+  // Shown only when HL is active so it's clear it controls the non-highlighted marks.
+  if (st.active && !isLineStyleHl) {
+    const nrmRow = document.createElement('div');
+    nrmRow.className = 'prop-row';
+    nrmRow.appendChild(Object.assign(document.createElement('span'),
+      { className: 'prop-label', textContent: 'Normal' }));
+    const nrmCtrl = document.createElement('div');
+    nrmCtrl.className = 'prop-ctrl';
+    nrmCol = document.createElement('input');
+    nrmCol.type = 'color'; nrmCol.value = nrmColor;
+    nrmCol.style.cssText = 'flex:1;height:24px;';
+    nrmCol.addEventListener('input', () => {
+      patchSpec(s => {
+        // Navigate to the same layer/encoding that holds the HL colour scale
+        const encSrc = (layerIdx !== null && s.layer?.[layerIdx])
+          ? (s.layer[layerIdx].encoding = s.layer[layerIdx].encoding || {})
+          : (s.encoding = s.encoding || {});
+        const ni = encSrc.color?.scale?.domain?.indexOf(HL_NRM);
+        if (ni != null && ni >= 0) encSrc.color.scale.range[ni] = nrmCol.value;
+        // Keep mark.color in sync so _syncHlNormalColor stays consistent
+        const mk = (layerIdx !== null && s.layer?.[layerIdx]) ? s.layer[layerIdx].mark : s.mark;
+        if (typeof mk === 'string') {
+          if (layerIdx !== null) s.layer[layerIdx].mark = { type: mk, color: nrmCol.value };
+          else s.mark = { type: mk, color: nrmCol.value };
+        } else if (mk && typeof mk === 'object') {
+          mk.color = nrmCol.value;
+        }
+      });
+    });
+    nrmCtrl.appendChild(nrmCol);
+    nrmRow.appendChild(nrmCtrl);
+    body.appendChild(nrmRow);
+  }
+}
+
+function rebuildMarkSection(spec) {
+  // When the chart is outer-faceted, marks/layers live in spec.spec.
+  spec = _viewSpec(spec);
+  const body = document.querySelector('#ps-marks .props-section-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  let markType, markObj, layerIdx = null, concatIdx = null;
+
+  const concatViews = spec.vconcat || spec.hconcat || spec.concat;
+
+  if (concatViews && concatViews.length) {
+    // Compound spec — view selector tabs first
+    selectedConcatIdx = Math.min(selectedConcatIdx, concatViews.length - 1);
+    body.appendChild(_buildConcatTabs(concatViews));
+    concatIdx = selectedConcatIdx;
+    const view = concatViews[selectedConcatIdx];
+    if (view.layer && view.layer.length) {
+      selectedLayerIdx = Math.min(selectedLayerIdx, view.layer.length - 1);
+      body.appendChild(_buildLayerTabs(view.layer));
+      const lyr = view.layer[selectedLayerIdx] || view.layer[0];
+      markType = _markType(lyr.mark);
+      markObj  = _markObj(lyr.mark);
+      layerIdx = selectedLayerIdx;
+    } else {
+      markType = _markType(view.mark);
+      markObj  = _markObj(view.mark);
+    }
+  } else if (spec.layer && spec.layer.length) {
+    selectedLayerIdx = Math.min(selectedLayerIdx, spec.layer.length - 1);
+    body.appendChild(_buildLayerTabs(spec.layer));
+    const lyr = spec.layer[selectedLayerIdx] || spec.layer[0];
+    markType = _markType(lyr.mark);
+    markObj  = _markObj(lyr.mark);
+    layerIdx = selectedLayerIdx;
+  } else {
+    markType = _markType(spec.mark);
+    markObj  = _markObj(spec.mark);
+  }
+
+  // Mark type dropdown
+  const typeRow = document.createElement('div');
+  typeRow.className = 'prop-row';
+  const typeCtrl = document.createElement('div');
+  typeCtrl.className = 'prop-ctrl';
+  const typeSel = document.createElement('select');
+  ['bar','line','area','point','arc','text','tick','rect','rule','trail','circle','square'].forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t.toUpperCase();
+    if (t === markType) opt.selected = true;
+    typeSel.appendChild(opt);
+  });
+  typeSel.addEventListener('change', () => {
+    const newType = typeSel.value;
+    patchSpec(ps => {
+      let target = ps;
+      if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) target = vs[concatIdx]; }
+
+      // Read highlight state before changing mark type, so we can re-apply correctly after
+      const oldHlSt = _readLayerHlState(target, layerIdx);
+      const oldStyleIsLine = HL_LINE_MARKS.has(markType);
+      const newStyleIsLine  = HL_LINE_MARKS.has(newType);
+      const styleChanged    = oldStyleIsLine !== newStyleIsLine;
+
+      // Remove highlight only if THIS layer was carrying it. Otherwise
+      // _removeHlFromSpec would wipe HL from every other layer too — which
+      // is the bug that causes duplicating a highlighted bar and then
+      // changing the copy to text to disable HL on the original bar.
+      if (oldHlSt.active && (!HL_MARKS.has(newType) || styleChanged)) _removeHlFromSpec(target);
+
+      // Apply the type change
+      if (layerIdx !== null && target.layer?.[layerIdx]) {
+        if (typeof target.layer[layerIdx].mark === 'string') target.layer[layerIdx].mark = { type: target.layer[layerIdx].mark };
+        target.layer[layerIdx].mark.type = newType;
+      } else if (!target.layer) {
+        if (typeof target.mark === 'string') target.mark = { type: target.mark };
+        if (!target.mark) target.mark = { type: 'bar' };
+        target.mark.type = newType;
+      }
+
+      // When converting to a text mark, bootstrap encoding.text from the existing
+      // value channel (y/x with an aggregate) so the spec stays valid and renders
+      // immediately — without this, a text mark with no text channel fails to embed
+      // which leaves embedResult null and the mark section never rebuilds.
+      if (newType === 'text') {
+        const enc = layerIdx !== null
+          ? (target.layer[layerIdx].encoding = target.layer[layerIdx].encoding || {})
+          : (target.encoding = target.encoding || {});
+        if (!enc.text) {
+          // Merge root + layer encodings to find a quantitative value channel
+          const rootEnc = target.encoding || {};
+          const lyrEnc  = (layerIdx !== null && target.layer?.[layerIdx]?.encoding) || {};
+          const merged  = { ...rootEnc, ...lyrEnc };
+          const valCh   = ['y', 'x', 'theta', 'radius'].find(ch => merged[ch]?.field);
+          if (valCh) {
+            enc.text = { field: merged[valCh].field, type: 'quantitative', format: ',.0f' };
+            if (merged[valCh].aggregate) enc.text.aggregate = merged[valCh].aggregate;
+          }
+        }
+      }
+
+      // Re-apply highlight under the new strategy if it was active and new type supports it
+      if (styleChanged && HL_MARKS.has(newType) && oldHlSt.active && (oldHlSt.hlMax || oldHlSt.hlMin)) {
+        _applyHlToSpec(target, layerIdx, oldHlSt.hlMax, oldHlSt.hlMin, oldHlSt.maxColor, oldHlSt.minColor, oldHlSt.hlSize);
+      }
+    });
+  });
+  typeCtrl.appendChild(typeSel);
+  typeRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Type' }));
+  typeRow.appendChild(typeCtrl);
+  body.appendChild(typeRow);
+
+  // Fill in config-level mark colour as the display default when not set explicitly
+  const cfg = (_getActiveConfig()).cfg;
+  const effectiveMarkObj = Object.assign({}, markObj);
+  if (effectiveMarkObj.color == null) effectiveMarkObj.color = cfg.mark?.color;
+
+  // Resolve active encoding for the current view/layer (used for tooltip state)
+  const _activeEnc = (() => {
+    let t = spec;
+    if (concatIdx !== null) { const vs = spec.vconcat||spec.hconcat||spec.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+    const root = t.encoding || {};
+    const lyr  = (layerIdx !== null && t.layer?.[layerIdx]?.encoding) || {};
+    return { ...root, ...lyr };
+  })();
+
+  // Controls
+  const isHlLayerTab = layerIdx !== null && spec.layer?.[layerIdx]?.name === '_hl_layer';
+  const defs = [...(MARK_CTRL_DEFS._common || []), ...(MARK_CTRL_DEFS[markType] || [])];
+  defs.forEach(def => {
+    // The synthetic _hl_layer has encoding.color overriding mark.color, so the colour picker
+    // would silently do nothing — hide it to avoid confusion. Colours are set via the
+    // Highlight Max/Min pickers on the main layer tab.
+    if (def.prop === 'color' && isHlLayerTab) return;
+    // For text marks with active text HL, encoding.color overrides mark.color. Hide the
+    // _common.color picker — the "Other" row in the Label highlight section takes its place.
+    // When HL is deactivated, applyChange forces a rebuild and this picker reappears.
+    if (def.prop === 'color' && markType === 'text' &&
+        (_activeEnc.color?.field === '_hl_cat' || _activeEnc.color?.field === '_hl_txt_cat')) return;
+    // Skip controls where the current value is an expression/conditional object —
+    // overwriting it with a plain scalar would destroy the conditional logic.
+    // Tooltip is exempt — it lives in encoding, not mark, so markObj.tooltip may be an object.
+    const rawVal = markObj[def.prop];
+    if (def.prop !== 'tooltip' && def.prop !== 'strokeDash' && rawVal !== null && rawVal !== undefined && typeof rawVal === 'object') return;
+
+    const row = document.createElement('div');
+    row.className = 'prop-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'prop-label';
+    lbl.textContent = def.label;
+    row.appendChild(lbl);
+
+    const { wrap, el } = _buildCtrlEl(def, effectiveMarkObj);
+    // Tooltip lives in encoding.tooltip (supports title/format); also honour mark.tooltip: true
+    if (def.prop === 'tooltip') {
+      const et = _activeEnc.tooltip;
+      const mt = markObj.tooltip;
+      el.checked = mt === true || (et !== null && et !== undefined && typeof et !== 'undefined');
+    }
+    const evtName = (def.ctrl === 'color' || def.ctrl === 'range') ? 'input' : 'change';
+    el.addEventListener(evtName, () => {
+      if (def.prop === 'tooltip') {
+        const fields = el.checked ? _buildTooltipFields(spec, layerIdx, concatIdx) : null;
+        patchSpec(ps => {
+          let t = ps;
+          if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+          // Clear any mark-level tooltip
+          const mk = layerIdx !== null ? t.layer?.[layerIdx]?.mark : t.mark;
+          if (mk && typeof mk === 'object') delete mk.tooltip;
+          // Write to encoding.tooltip
+          const enc = layerIdx !== null
+            ? (t.layer[layerIdx].encoding = t.layer[layerIdx].encoding || {})
+            : (t.encoding = t.encoding || {});
+          if (fields) enc.tooltip = fields;
+          else delete enc.tooltip;
+        });
+        return;
+      }
+      let value;
+      if (def.ctrl === 'checkbox') {
+        value = def.prop === 'point' ? el.checked : el.checked;
+      } else if (def.ctrl === 'number') {
+        value = el.value !== '' ? parseFloat(el.value) : null;
+      } else if (def.ctrl === 'range') {
+        value = parseFloat(el.value);
+      } else if (def.ctrl === 'strokedash') {
+        value = el.value ? el.value.split(',').map(Number) : null;
+      } else {
+        // For select controls, empty string means the user picked "—" (unset) → delete the prop
+        value = el.value !== '' ? el.value : null;
+      }
+      _applyMarkProp(def.prop, value, layerIdx, concatIdx);
+    });
+    row.appendChild(wrap);
+    body.appendChild(row);
+  });
+
+  // ── Per-layer X / Y field override (layered specs only) ──────
+  // When the spec has multiple layers, each layer can override the
+  // shared x/y encoding to show a different field.
+  if (layerIdx !== null && spec.layer && spec.layer.length > 1) {
+    const axisFields = _getDataFields();
+    if (axisFields.length) {
+      ['x', 'y'].forEach(axis => {
+        const axRow = document.createElement('div'); axRow.className = 'prop-row';
+        axRow.appendChild(Object.assign(document.createElement('span'), {
+          className: 'prop-label', textContent: axis.toUpperCase() + ' Field'
+        }));
+        const axCtrl = document.createElement('div'); axCtrl.className = 'prop-ctrl';
+        const axSel = document.createElement('select');
+
+        // "Inherited" option — uses the shared encoding
+        const inhOpt = document.createElement('option');
+        inhOpt.value = ''; inhOpt.textContent = '— inherited —';
+        axSel.appendChild(inhOpt);
+
+        // The layer's own encoding for this axis (if any)
+        const lyrEnc = spec.layer[layerIdx].encoding || {};
+        const curField = lyrEnc[axis]?.field ? _rawFieldName(lyrEnc[axis].field) : '';
+
+        axisFields.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f; opt.textContent = f;
+          if (f === curField) opt.selected = true;
+          axSel.appendChild(opt);
+        });
+
+        axSel.addEventListener('change', () => {
+          patchSpec(ps => {
+            let t = ps;
+            if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+            const lyr = t.layer[layerIdx];
+            lyr.encoding = lyr.encoding || {};
+
+            if (!axSel.value) {
+              // "Inherited" — remove the layer-level override
+              delete lyr.encoding[axis];
+              if (Object.keys(lyr.encoding).length === 0) delete lyr.encoding;
+            } else {
+              // Look at the shared encoding to inherit type/aggregate/axis config
+              const shared = t.encoding?.[axis] || {};
+              lyr.encoding[axis] = {
+                field: axSel.value,
+                type: shared.type || 'quantitative'
+              };
+              if (shared.aggregate) lyr.encoding[axis].aggregate = shared.aggregate;
+            }
+          });
+        });
+
+        axCtrl.appendChild(axSel); axRow.appendChild(axCtrl); body.appendChild(axRow);
+      });
+    }
+  }
+
+  // ── Text field + format (text marks only) ────────────────────
+  if (markType === 'text') {
+    const txtFields = _getDataFields();
+    if (txtFields.length) {
+      const tfRow = document.createElement('div');
+      tfRow.className = 'prop-row';
+      tfRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Field' }));
+      const tfCtrl = document.createElement('div');
+      tfCtrl.className = 'prop-ctrl';
+      const tfSel = document.createElement('select');
+      const tfEmpty = document.createElement('option');
+      tfEmpty.value = ''; tfEmpty.textContent = '—';
+      tfSel.appendChild(tfEmpty);
+      const curTextField = _rawFieldName(_activeEnc.text?.field || '');
+      txtFields.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = f;
+        if (f === curTextField) opt.selected = true;
+        tfSel.appendChild(opt);
+      });
+      tfSel.addEventListener('change', () => {
+        patchSpec(ps => {
+          let t = ps;
+          if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+          const enc = layerIdx !== null
+            ? (t.layer[layerIdx].encoding = t.layer[layerIdx].encoding || {})
+            : (t.encoding = t.encoding || {});
+          if (!enc.text || typeof enc.text !== 'object') enc.text = { type: 'quantitative', format: ',.0f' };
+          if (tfSel.value) {
+            // Always write the raw (de-prefixed) field name into the spec.
+            // The dropdown options are deduplicated raw names, but guard here too
+            // in case the value somehow still carries a Vega aggregate prefix.
+            const rawFieldVal = _rawFieldName(tfSel.value);
+            enc.text.field = rawFieldVal;
+            // Match the aggregate the main encoding uses for this field so text
+            // labels show the same value as the bar/line they annotate.
+            const allEncs = [t.encoding, ...(t.layer || []).map(l => l.encoding)].filter(Boolean);
+            let inferredAgg = null;
+            for (const e of allEncs) {
+              for (const ch of ['y','x','theta','radius','size']) {
+                const f = e[ch]?.field;
+                if (f && (f === tfSel.value || f === rawFieldVal) && e[ch]?.aggregate) {
+                  inferredAgg = e[ch].aggregate; break;
+                }
+              }
+              if (inferredAgg) break;
+            }
+            if (inferredAgg) enc.text.aggregate = inferredAgg;
+            else delete enc.text.aggregate;
+          } else {
+            delete enc.text.field;
+            delete enc.text.aggregate;
+          }
+        });
+      });
+      tfCtrl.appendChild(tfSel);
+      tfRow.appendChild(tfCtrl);
+      body.appendChild(tfRow);
+    }
+    const fmtRow = document.createElement('div');
+    fmtRow.className = 'prop-row';
+    fmtRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Format' }));
+    const fmtCtrl = document.createElement('div');
+    fmtCtrl.className = 'prop-ctrl';
+    const fmtSel = document.createElement('select');
+    const FMT_OPTIONS = [
+      ['', 'Auto'],
+      [',.0f', '1,234'],
+      [',.1f', '1,234.5'],
+      ['.1%', '12.3%'],
+      ['.2s', '1.2M'],
+    ];
+    const curFmt = _activeEnc.text?.format || '';
+    FMT_OPTIONS.forEach(([val, lbl]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = lbl;
+      if (val === curFmt) opt.selected = true;
+      fmtSel.appendChild(opt);
+    });
+    fmtSel.addEventListener('change', () => {
+      patchSpec(ps => {
+        let t = ps;
+        if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+        const enc = layerIdx !== null
+          ? (t.layer[layerIdx].encoding = t.layer[layerIdx].encoding || {})
+          : (t.encoding = t.encoding || {});
+        if (!enc.text || typeof enc.text !== 'object') enc.text = { field: enc.text?.field || '', type: 'quantitative' };
+        if (fmtSel.value) enc.text.format = fmtSel.value;
+        else delete enc.text.format;
+      });
+    });
+    fmtCtrl.appendChild(fmtSel);
+    fmtRow.appendChild(fmtCtrl);
+    body.appendChild(fmtRow);
+
+    // ── Prefix / Suffix (text marks only) ─────────────────────────
+    // Adds a per-layer calculate that wraps the text field value with
+    // a prefix and/or suffix string. The calculate is a clean, readable
+    // Vega-Lite transform with no hidden metadata.
+    const _TXT_PFX_AS = '_txt_pfx';
+
+    // Parse prefix/suffix/field/format from an existing calculate expression
+    const _parsePfxCalc = (expr) => {
+      // 'pfx' + format(datum['field'], 'fmt') + 'sfx'
+      const m1 = expr.match(/^'(.*?)'\s*\+\s*format\(datum\['([^']+)'\],\s*'([^']*)'\)\s*\+\s*'(.*?)'$/);
+      if (m1) return { prefix: m1[1], field: m1[2], format: m1[3], suffix: m1[4] };
+      // 'pfx' + datum['field'] + 'sfx'
+      const m2 = expr.match(/^'(.*?)'\s*\+\s*datum\['([^']+)'\]\s*\+\s*'(.*?)'$/);
+      if (m2) return { prefix: m2[1], field: m2[2], format: '', suffix: m2[3] };
+      return null;
+    };
+
+    const curCalc = (() => {
+      const lyr = layerIdx !== null ? spec.layer?.[layerIdx] : null;
+      const tx = (lyr?.transform || []).find(t => t.as === _TXT_PFX_AS);
+      if (!tx) return { prefix: '', suffix: '', field: '', format: '' };
+      return _parsePfxCalc(tx.calculate) || { prefix: '', suffix: '', field: '', format: '' };
+    })();
+
+    const pfxRow = document.createElement('div'); pfxRow.className = 'prop-row';
+    pfxRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Prefix' }));
+    const pfxCtrl = document.createElement('div'); pfxCtrl.className = 'prop-ctrl';
+    const pfxInp = document.createElement('input'); pfxInp.type = 'text';
+    pfxInp.placeholder = 'e.g. Avg: '; pfxInp.value = curCalc.prefix;
+    pfxCtrl.appendChild(pfxInp); pfxRow.appendChild(pfxCtrl); body.appendChild(pfxRow);
+
+    const sfxRow = document.createElement('div'); sfxRow.className = 'prop-row';
+    sfxRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Suffix' }));
+    const sfxCtrl = document.createElement('div'); sfxCtrl.className = 'prop-ctrl';
+    const sfxInp = document.createElement('input'); sfxInp.type = 'text';
+    sfxInp.placeholder = 'e.g.  pts'; sfxInp.value = curCalc.suffix;
+    sfxCtrl.appendChild(sfxInp); sfxRow.appendChild(sfxCtrl); body.appendChild(sfxRow);
+
+    const applyPfxSfx = () => {
+      patchSpec(ps => {
+        let t = ps;
+        if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+        const lyr = layerIdx !== null ? t.layer?.[layerIdx] : null;
+        const enc = lyr ? (lyr.encoding = lyr.encoding || {}) : (t.encoding = t.encoding || {});
+        const pfx = pfxInp.value;
+        const sfx = sfxInp.value;
+
+        // Find and parse any existing prefix/suffix calculate
+        const existingTx = lyr && (lyr.transform || []).find(tx => tx.as === _TXT_PFX_AS);
+        const parsed = existingTx ? _parsePfxCalc(existingTx.calculate) : null;
+
+        // Remove the old calculate
+        if (lyr && lyr.transform) {
+          lyr.transform = lyr.transform.filter(tx => tx.as !== _TXT_PFX_AS);
+          if (!lyr.transform.length) delete lyr.transform;
+        }
+
+        // Determine the source field and format
+        let srcField, srcFmt;
+        if (parsed) {
+          srcField = parsed.field;
+          srcFmt   = parsed.format;
+        } else if (enc.text?.field && enc.text.field !== _TXT_PFX_AS) {
+          srcField = enc.text.field;
+          srcFmt   = enc.text.format || '';
+        }
+
+        // Clearing both: restore original text encoding
+        if (!pfx && !sfx) {
+          if (srcField) {
+            enc.text = { field: srcField, type: 'quantitative' };
+            if (srcFmt) enc.text.format = srcFmt;
+          }
+          return;
+        }
+
+        if (!srcField) return;
+
+        // Build a clean calculate expression
+        const valExpr = srcFmt
+          ? "format(datum['" + srcField + "'], '" + srcFmt + "')"
+          : "datum['" + srcField + "']";
+        const expr = "'" + pfx.replace(/'/g, "\\'") + "' + " + valExpr + " + '" + sfx.replace(/'/g, "\\'") + "'";
+
+        if (!lyr) return;
+        lyr.transform = lyr.transform || [];
+        lyr.transform.push({ calculate: expr, as: _TXT_PFX_AS });
+
+        enc.text = { field: _TXT_PFX_AS };
+      });
+    };
+    pfxInp.addEventListener('change', applyPfxSfx);
+    sfxInp.addEventListener('change', applyPfxSfx);
+  }
+
+  // ── Tooltip select (Off / Basic / Advanced) ──────────────────
+  const ttRow = document.createElement('div');
+  ttRow.className = 'prop-row';
+  ttRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Tooltip' }));
+  const ttCtrl = document.createElement('div');
+  ttCtrl.className = 'prop-ctrl';
+  const ttSel = document.createElement('select');
+  [['off','Off'],['basic','Basic'],['advanced','Advanced']].forEach(([val, label]) => {
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    ttSel.appendChild(opt);
+  });
+  // Determine current state
+  const ttEnc = _activeEnc.tooltip;
+  const ttMark = markObj.tooltip;
+  if (ttEnc !== null && ttEnc !== undefined) ttSel.value = 'advanced';
+  else if (ttMark === true)                  ttSel.value = 'basic';
+  else                                       ttSel.value = 'off';
+
+  ttSel.addEventListener('change', () => {
+    patchSpec(ps => {
+      let t = ps;
+      if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+      const mk = layerIdx !== null ? t.layer?.[layerIdx]?.mark : t.mark;
+      const enc = layerIdx !== null
+        ? (t.layer[layerIdx].encoding = t.layer[layerIdx].encoding || {})
+        : (t.encoding = t.encoding || {});
+      // Clear both first
+      if (mk && typeof mk === 'object') delete mk.tooltip;
+      else if (typeof mk === 'string' && layerIdx !== null) { t.layer[layerIdx].mark = { type: mk }; delete t.layer[layerIdx].mark.tooltip; }
+      delete enc.tooltip;
+      if (ttSel.value === 'basic') {
+        // Ensure mark is an object so we can set tooltip: true
+        if (layerIdx !== null) {
+          if (typeof t.layer[layerIdx].mark === 'string') t.layer[layerIdx].mark = { type: t.layer[layerIdx].mark };
+          t.layer[layerIdx].mark.tooltip = true;
+        } else {
+          if (typeof t.mark === 'string') t.mark = { type: t.mark };
+          t.mark.tooltip = true;
+        }
+      } else if (ttSel.value === 'advanced') {
+        const fields = _buildTooltipFields(ps, layerIdx, concatIdx);
+        enc.tooltip = fields;
+      }
+    });
+  });
+  ttCtrl.appendChild(ttSel);
+  ttRow.appendChild(ttCtrl);
+  body.appendChild(ttRow);
+
+  // Highlight max/min controls (only for flat/layered specs, not compound)
+  if (!concatViews) {
+    _buildHighlightControls(spec, layerIdx, body);
+    if (markType === 'text') _buildTextHlControls(spec, layerIdx, body);
+  }
+
+  // ── Layer-level X / Y encoding controls ─────────────────────
+  // Shown when the currently selected layer has its own encoding.x or encoding.y
+  // (as opposed to inheriting from root, which is handled by the X/Y AXIS sections).
+  if (layerIdx !== null) {
+    let target = spec;
+    if (concatIdx !== null) { const vs = spec.vconcat||spec.hconcat||spec.concat; if (vs?.[concatIdx]) target = vs[concatIdx]; }
+    const lyr = target.layer?.[layerIdx];
+    if (lyr) {
+      const layerFields = _getDataFields();
+      ['x', 'y'].forEach(axis => {
+        const lyrEnc = lyr.encoding?.[axis];
+        if (!lyrEnc) return; // this layer doesn't have its own encoding for this axis
+
+        const axDiv = document.createElement('div');
+        axDiv.className = 'props-subsection-divider';
+        axDiv.textContent = axis.toUpperCase() + ' Encoding';
+        body.appendChild(axDiv);
+
+        _buildEncFieldRows(lyrEnc, layerFields, (prop, value) => {
+          patchSpec(ps => {
+            let t = ps;
+            if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+            const enc = t.layer?.[layerIdx]?.encoding?.[axis];
+            if (!enc) return;
+            if (value === null || value === undefined) delete enc[prop];
+            else enc[prop] = value;
+          });
+          try { rebuildMarkSection(JSON.parse(specBuffer)); } catch(_) {}
+        }, body);
+
+        // Format row for axis label format (enc.axis.format)
+        const fmtRow = document.createElement('div'); fmtRow.className = 'prop-row';
+        fmtRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Format' }));
+        const fmtCtrl = document.createElement('div'); fmtCtrl.className = 'prop-ctrl';
+        const fmtSel  = document.createElement('select');
+        const curFmt  = (lyrEnc.axis && typeof lyrEnc.axis === 'object') ? (lyrEnc.axis.format || '') : '';
+        AXIS_FMT_OPTIONS.forEach(([val, lbl]) => {
+          const o = document.createElement('option'); o.value = val; o.textContent = lbl;
+          if (val === curFmt) o.selected = true;
+          fmtSel.appendChild(o);
+        });
+        fmtSel.addEventListener('change', () => {
+          patchSpec(ps => {
+            let t = ps;
+            if (concatIdx !== null) { const vs = ps.vconcat||ps.hconcat||ps.concat; if (vs?.[concatIdx]) t = vs[concatIdx]; }
+            const enc = t.layer?.[layerIdx]?.encoding?.[axis];
+            if (!enc) return;
+            if (enc.axis === null || enc.axis === false) return;
+            if (!enc.axis || typeof enc.axis !== 'object') enc.axis = {};
+            if (fmtSel.value) enc.axis.format = fmtSel.value;
+            else delete enc.axis.format;
+          });
+        });
+        fmtCtrl.appendChild(fmtSel); fmtRow.appendChild(fmtCtrl); body.appendChild(fmtRow);
+      });
+    }
+  }
+
+  // Duplicate / Delete mark buttons — not shown for the synthetic _hl_layer
+  const isHlLayer = layerIdx !== null && spec.layer?.[layerIdx]?.name === '_hl_layer';
+  if (!concatViews && !isHlLayer) {
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:4px;margin-top:8px;';
+
+    const dupBtn = document.createElement('button');
+    dupBtn.className = 'btn';
+    dupBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 6px;letter-spacing:0.05em;';
+    dupBtn.textContent = '⊕ DUPLICATE';
+    dupBtn.onclick = () => duplicateLayer(layerIdx, concatIdx);
+    btnRow.appendChild(dupBtn);
+
+    // Only show delete when there are 2+ layers (can't delete the last mark)
+    if (spec.layer && spec.layer.length > 1 && layerIdx !== null) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn';
+      delBtn.style.cssText = 'flex:1;font-size:10px;padding:4px 6px;letter-spacing:0.05em;color:var(--red);';
+      delBtn.textContent = '⊖ DELETE';
+      delBtn.onclick = () => deleteLayer(layerIdx, concatIdx);
+      btnRow.appendChild(delBtn);
+    }
+
+    body.appendChild(btnRow);
+  }
+
+  _lastMarkSig = _markSig(spec);
+}
+
+function _applyMarkProp(prop, value, layerIdx, concatIdx = null) {
+  patchSpec(spec => {
+    // Navigate into the correct sub-view for compound (vconcat/hconcat/concat) specs
+    let target = spec;
+    if (concatIdx !== null) {
+      const views = spec.vconcat || spec.hconcat || spec.concat;
+      if (views?.[concatIdx]) target = views[concatIdx];
+      else return;
+    }
+    let mark;
+    if (layerIdx !== null && target.layer && target.layer[layerIdx]) {
+      if (typeof target.layer[layerIdx].mark === 'string')
+        target.layer[layerIdx].mark = { type: target.layer[layerIdx].mark };
+      mark = target.layer[layerIdx].mark;
+    } else {
+      if (target.layer) return;
+      if (typeof target.mark === 'string') target.mark = { type: target.mark };
+      if (!target.mark) target.mark = { type: 'bar' };
+      mark = target.mark;
+    }
+    if (value === null || value === undefined) delete mark[prop];
+    else mark[prop] = value;
+
+    // When fontSize changes on a text layer that has an active text-HL size encoding,
+    // sync enc.size.value (the normal-label size) to the new fontSize so non-highlighted
+    // labels update immediately without having to re-apply the label highlight.
+    if (prop === 'fontSize' && layerIdx !== null && target.layer?.[layerIdx]) {
+      const enc = target.layer[layerIdx].encoding || {};
+      if (Array.isArray(enc.size?.condition) && enc.size.condition.some(c => c.test?.includes('_hl_cat') || c.test?.includes('_hl_txt_cat'))) {
+        enc.size.value = value ?? 11;
+      }
+    }
+  });
+}
+
+function _autoSyncMarkSection() {
+  try {
+    const sp = JSON.parse(specBuffer);
+    const sig    = _markSig(sp);
+    const axSig  = _axisSig(sp);
+    if (sig   !== _lastMarkSig) rebuildMarkSection(sp);
+    if (axSig !== _lastAxisSig) { rebuildAxisSection(sp, 'x'); rebuildAxisSection(sp, 'y'); }
+  } catch(_) {}
+}
+
+function applyLegendProps() {
+  patchSpec(spec => {
+    if (!spec.encoding || !spec.encoding.color) return;
+    const show   = document.getElementById('pp-legend-show').checked;
+    const orient = document.getElementById('pp-legend-orient').value;
+    if (!show) { spec.encoding.color.legend = null; return; }
+    if (!spec.encoding.color.legend || typeof spec.encoding.color.legend !== 'object') {
+      spec.encoding.color.legend = {};
+    }
+    spec.encoding.color.legend.orient = orient;
+  });
+}
+
+function applyLayoutProps() {
+  _syncSpecFromEditor();
+  let spec;
+  try { spec = JSON.parse(specBuffer); } catch(e) { return; }
+
+  // Width/height apply to each chart (or per facet cell). In outer-facet
+  // operator form that's the inner `spec.spec` object; in the flat form
+  // it's the root itself. Padding is chart-level in both forms → root.
+  const dimTarget = _viewSpec(spec);
+  const w = document.getElementById('pp-width').value;
+  if (w !== '') dimTarget.width = parseInt(w); else delete dimTarget.width;
+  const h = document.getElementById('pp-height').value;
+  if (h !== '') dimTarget.height = parseInt(h); else delete dimTarget.height;
+
+  // Manual dimension change turns off fit mode
+  if (fitState.active) deactivateFit();
+
+  const p = document.getElementById('pp-padding').value;
+  if (p !== '') spec.padding = parseInt(p); else delete spec.padding;
+  specBuffer = JSON.stringify(spec, null, 2);
+  suppressRender = true;
+  cmEditor.setValue(specBuffer);
+  suppressRender = false;
+
+  // Background: mutate the active CONFIGS entry so renderSpec picks it up
+  const bg = document.getElementById('pp-bg-color').value;
+  const entry = CONFIGS.find(c => c.id === activeConfigId);
+  if (entry) {
+    entry.cfg.background = bg;
+    configBuffer = JSON.stringify(entry.cfg, null, 2);
+    if (activeEditorView === 'config') {
+      suppressRender = true;
+      cmEditor.setValue(configBuffer);
+      suppressRender = false;
+    }
+  }
+  if (liveMode) renderSpec(); else dot('idle');
+}
+
+// ── TRANSFORM / FACET / SORT helpers ──────────────────────────
+// We track which filter the panel currently "owns" by remembering the
+// field of the last filter we wrote. On the next apply we remove only
+// that filter, leaving any other (e.g. expression) transforms intact.
+let _ownedFilterField = null;
+
+// Parse a simple expression filter like `datum.year == 2000` or
+// `datum['symbol'] === 'GOOG'` into { field, op, val }. Returns null for
+// anything more complex (compound expressions, function calls, etc).
+function _parseExpressionFilter(expr) {
+  if (typeof expr !== 'string') return null;
+  const m = expr.trim().match(
+    /^datum(?:\.([A-Za-z_$][\w$]*)|\[\s*['"]([^'"]+)['"]\s*\])\s*(===|==|!==|!=|>=|<=|>|<)\s*(.+?)\s*$/
+  );
+  if (!m) return null;
+  const field = m[1] || m[2];
+  const opRaw = m[3];
+  const raw   = m[4].trim();
+  let val;
+  if ((/^'.*'$/.test(raw) || /^".*"$/.test(raw))) val = raw.slice(1, -1);
+  else if (/^-?\d+(\.\d+)?$/.test(raw))           val = parseFloat(raw);
+  else return null;
+  const op = (opRaw === '==' || opRaw === '===') ? '=='
+           : (opRaw === '!=' || opRaw === '!==') ? '!=' : opRaw;
+  return { field, op, val };
+}
+
+// Match a transform entry the panel could have written for `field`. Covers
+// structured filters and simple expression filters that target the field.
+function _isOwnedFilter(t, field) {
+  if (!field || !t || !t.filter) return false;
+  const f = t.filter;
+  if (typeof f === 'string') {
+    const p = _parseExpressionFilter(f);
+    return !!(p && p.field === field);
+  }
+  if (f.field === field) return true;
+  if (f.not && f.not.field === field) return true;
+  return false;
+}
+
+function _populateFieldSelects() {
+  const fields = _getDataFields();
+  ['pp-filter-field', 'pp-facet-field', 'pp-sort-field'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    const placeholder = id === 'pp-sort-field' ? '— default —' : '— none —';
+    sel.innerHTML = `<option value="">${placeholder}</option>` +
+      fields.map(f => `<option value="${f}">${f}</option>`).join('');
+    if (fields.includes(current)) sel.value = current;
+  });
+}
+
+function _parseFilterValue(raw, op) {
+  const v = raw.trim();
+  if (op === 'oneOf') {
+    return v.split(',').map(s => {
+      const t = s.trim();
+      if (/^-?\d+(\.\d+)?$/.test(t)) return parseFloat(t);
+      return t;
+    });
+  }
+  if (/^-?\d+(\.\d+)?$/.test(v)) return parseFloat(v);
+  return v;
+}
+
+// Categorical operators get the checkbox-list value picker; comparison
+// operators keep a free-form text input.
+const _CATEGORICAL_OPS = new Set(['==', '!=', 'oneOf']);
+
+// Distinct, sorted values for a field from the active dataset (capped to
+// keep the widget usable for high-cardinality fields). Tries multiple
+// sources so it works for uploaded data, URL-fetched data, and data that
+// only exists inside the rendered Vega view.
+function _getDistinctFieldValues(field, cap = 500) {
+  if (!field) return [];
+  const sortVals = (set) => [...set].sort((a, b) => {
+    const an = typeof a === 'number', bn = typeof b === 'number';
+    if (an && bn) return a - b;
+    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+  });
+  const collect = (rows) => {
+    const set = new Set();
+    for (const row of rows) {
+      const v = row?.[field];
+      if (v == null || v === '') continue;
+      set.add(v);
+      if (set.size > cap) break;
+    }
+    return set;
+  };
+
+  // 1. Uploaded data
+  if (userData?.length) {
+    const set = collect(userData);
+    if (set.size) return sortVals(set);
+  }
+  // 2. Cached raw rows from a URL fetch
+  if (_cachedRawRows?.length) {
+    const set = collect(_cachedRawRows);
+    if (set.size) return sortVals(set);
+  }
+  // 3. Last-ditch: pull straight from the rendered Vega view.
+  // source_0/source_1/data_0/data_1 carry the chart's own pipeline rows.
+  if (embedResult?.view) {
+    for (const name of ['source_0', 'source_1', 'data_0', 'data_1']) {
+      try {
+        const d = embedResult.view.data(name);
+        if (Array.isArray(d) && d.length && field in d[0]) {
+          const set = collect(d);
+          if (set.size) return sortVals(set);
+        }
+      } catch(_) {}
+    }
+  }
+  return [];
+}
+
+// Selected values as a Set of strings (stringified for stable comparison
+// across the data round-trip; we coerce back to numbers in the spec).
+let _filterSelected = new Set();
+
+function _coerceForSpec(s) {
+  if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  return s;
+}
+
+function _buildFilterValueWidget(opts = {}) {
+  const slot  = document.getElementById('pp-filter-value-slot');
+  if (!slot) return;
+  const field = document.getElementById('pp-filter-field').value;
+  const op    = document.getElementById('pp-filter-op').value;
+  slot.innerHTML = '';
+
+  // Comparison operators: simple text input
+  if (!_CATEGORICAL_OPS.has(op)) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id   = 'pp-filter-value-text';
+    inp.placeholder = 'e.g. 2020';
+    if (opts.preserveText) inp.value = opts.preserveText;
+    inp.addEventListener('change', applyFilterProp);
+    slot.appendChild(inp);
+    return;
+  }
+
+  // Categorical: checkbox list
+  if (!field) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--muted);padding:4px 0;';
+    hint.textContent = 'Pick a field first';
+    slot.appendChild(hint);
+    return;
+  }
+  const values = _getDistinctFieldValues(field);
+  if (!values.length) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--muted);padding:4px 0;';
+    hint.textContent = 'No values yet — render the chart first';
+    slot.appendChild(hint);
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'fv-list';
+
+  // "Select all" header row
+  const allRow = document.createElement('label');
+  allRow.className = 'fv-row fv-all';
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  const allSelected = values.every(v => _filterSelected.has(String(v)));
+  allCb.checked = allSelected;
+  allCb.indeterminate = !allSelected && values.some(v => _filterSelected.has(String(v)));
+  allRow.appendChild(allCb);
+  allRow.appendChild(document.createTextNode('Select all'));
+  list.appendChild(allRow);
+
+  // Per-value rows
+  const valueCbs = [];
+  values.forEach(v => {
+    const row = document.createElement('label');
+    row.className = 'fv-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = _filterSelected.has(String(v));
+    cb.dataset.value = String(v);
+    valueCbs.push(cb);
+    cb.addEventListener('change', () => {
+      if (cb.checked) _filterSelected.add(cb.dataset.value);
+      else _filterSelected.delete(cb.dataset.value);
+      // Refresh "Select all" state
+      const all = valueCbs.every(c => c.checked);
+      const some = valueCbs.some(c => c.checked);
+      allCb.checked = all;
+      allCb.indeterminate = !all && some;
+      applyFilterProp();
+    });
+    row.appendChild(cb);
+    row.appendChild(document.createTextNode(String(v)));
+    list.appendChild(row);
+  });
+
+  allCb.addEventListener('change', () => {
+    if (allCb.checked) {
+      values.forEach(v => _filterSelected.add(String(v)));
+      valueCbs.forEach(c => c.checked = true);
+    } else {
+      values.forEach(v => _filterSelected.delete(String(v)));
+      valueCbs.forEach(c => c.checked = false);
+    }
+    allCb.indeterminate = false;
+    applyFilterProp();
+  });
+
+  slot.appendChild(list);
+}
+
+function applyFilterProp() {
+  patchSpec(spec => {
+    const field = document.getElementById('pp-filter-field').value;
+    const op    = document.getElementById('pp-filter-op').value;
+
+    // Drop the previously-owned filter (if any) — we only remove the entry
+    // matching the field we last wrote, so hand-edited transforms stay put.
+    if (_ownedFilterField && Array.isArray(spec.transform)) {
+      spec.transform = spec.transform.filter(t => !_isOwnedFilter(t, _ownedFilterField));
+      if (!spec.transform.length) delete spec.transform;
+    }
+    _ownedFilterField = null;
+
+    if (!field) return;
+
+    let filter;
+    if (_CATEGORICAL_OPS.has(op)) {
+      const values  = _getDistinctFieldValues(field);
+      const sel     = [..._filterSelected].map(_coerceForSpec);
+      // No selection or "all" selected → no-op (leave data unfiltered)
+      if (sel.length === 0) return;
+      if (values.length && sel.length === values.length) return;
+
+      if (op === 'oneOf')      filter = { field, oneOf: sel };
+      else if (op === '==')    filter = sel.length === 1 ? { field, equal: sel[0] } : { field, oneOf: sel };
+      else if (op === '!=')    filter = sel.length === 1 ? { not: { field, equal: sel[0] } } : { not: { field, oneOf: sel } };
+    } else {
+      const inp = document.getElementById('pp-filter-value-text');
+      const raw = inp ? inp.value : '';
+      if (raw.trim() === '') return;
+      const value = _parseFilterValue(raw, op);
+      if (op === '>')        filter = { field, gt:  value };
+      else if (op === '>=')  filter = { field, gte: value };
+      else if (op === '<')   filter = { field, lt:  value };
+      else if (op === '<=')  filter = { field, lte: value };
+    }
+    if (!filter) return;
+
+    spec.transform = [{ filter }, ...(spec.transform || [])];
+    _ownedFilterField = field;
+  });
+}
+
+function applyFacetProp() {
+  // patchRootSpec: we may need to wrap/unwrap the root, which means editing
+  // the true root of the spec (not the outer-facet inner view).
+  patchRootSpec(root => {
+    const field     = document.getElementById('pp-facet-field').value;
+    const type      = document.getElementById('pp-facet-type').value;
+    const cols      = document.getElementById('pp-facet-cols').value;
+    const title     = document.getElementById('pp-facet-title').value;
+    const titleSize = document.getElementById('pp-facet-title-size').value;
+    const labelSize = document.getElementById('pp-facet-label-size').value;
+    const shareX    = document.getElementById('pp-facet-share-x').checked;
+    const shareY    = document.getElementById('pp-facet-share-y').checked;
+
+    // Write title/header styling into facet.header. Vega-Lite ignores
+    // styling props placed directly on the facet field definition.
+    const writeHeader = (facetObj) => {
+      const header = {};
+      if (title.trim() !== '')       header.title         = title;
+      if (titleSize !== '')          header.titleFontSize = parseInt(titleSize);
+      if (labelSize !== '')          header.labelFontSize = parseInt(labelSize);
+      if (Object.keys(header).length) facetObj.header = header;
+      else delete facetObj.header;
+    };
+
+    // Clean-up helper for axis sharing on whichever object carries resolve.
+    const writeShare = (target) => {
+      if (!shareX || !shareY) {
+        target.resolve = target.resolve || {};
+        target.resolve.scale = target.resolve.scale || {};
+        if (!shareX) target.resolve.scale.x = 'independent'; else delete target.resolve.scale.x;
+        if (!shareY) target.resolve.scale.y = 'independent'; else delete target.resolve.scale.y;
+      } else if (target.resolve && target.resolve.scale) {
+        delete target.resolve.scale.x;
+        delete target.resolve.scale.y;
+        if (Object.keys(target.resolve.scale).length === 0) delete target.resolve.scale;
+        if (Object.keys(target.resolve).length === 0) delete target.resolve;
+      }
+    };
+
+    // No field selected → clear whatever facet form is currently used.
+    if (!field) {
+      if (root.facet && root.spec) {
+        _unwrapOuterFacet(root);
+        delete root.columns;   // outer-form columns sibling
+        writeShare(root); // resolve lives on root after unwrapping
+      } else if (root.encoding) {
+        delete root.encoding.facet;
+        writeShare(root);
+      }
+      return;
+    }
+
+    const facetDef = { field, type };
+    const colsNum  = cols !== '' ? parseInt(cols) : null;
+
+    // Is the target spec layered/compound? If so, use the outer facet operator
+    // form; otherwise the lightweight encoding.facet form is sufficient.
+    const inner = _viewSpec(root);
+    const useOuter = _isLayeredSpec(inner);
+
+    if (useOuter) {
+      // Remove any stale encoding.facet from the inner spec first.
+      if (inner.encoding && 'facet' in inner.encoding) delete inner.encoding.facet;
+      if (root.facet && root.spec) {
+        // Already outer-faceted — just update the facet definition in place.
+        root.facet = facetDef;
+      } else {
+        _wrapAsOuterFacet(root, facetDef);
+      }
+      writeHeader(root.facet);
+      // For the outer-facet operator, `columns` is a sibling of `facet` at
+      // root, not a property on facet itself.
+      if (colsNum != null) root.columns = colsNum; else delete root.columns;
+      writeShare(root.spec);
+    } else {
+      // Flat spec. If we were previously outer-faceted, unwrap first.
+      if (root.facet && root.spec) { _unwrapOuterFacet(root); delete root.columns; }
+      root.encoding = root.encoding || {};
+      if (colsNum != null) facetDef.columns = colsNum;
+      root.encoding.facet = facetDef;
+      writeHeader(root.encoding.facet);
+      writeShare(root);
+    }
+  });
+}
+
+function applySortProp() {
+  patchSpec(spec => {
+    const axis  = document.getElementById('pp-sort-axis').value;   // 'x' or 'y'
+    const other = axis === 'x' ? 'y' : 'x';
+    const field = document.getElementById('pp-sort-field').value;
+    const order = document.getElementById('pp-sort-order').value;
+
+    if (!spec.encoding || !spec.encoding[axis]) return;
+    // Clear sort on the non-selected axis so only one axis carries the sort
+    if (spec.encoding[other] && spec.encoding[other].sort !== undefined) {
+      delete spec.encoding[other].sort;
+    }
+    if (!field) { if (spec.encoding[axis].sort !== undefined) delete spec.encoding[axis].sort; return; }
+    spec.encoding[axis].sort = { field, order };
+  });
+}
+
+function syncTransformPanel(root) {
+  // When the chart is outer-faceted, transforms/encoding live inside root.spec.
+  // We read filter/sort from the inner view, but read the facet definition
+  // from the true root (outer form) or inner encoding (flat form).
+  const spec = _viewSpec(root);
+  _populateFieldSelects();
+
+  // Filter — pick up the first filter entry that matches a shape the panel
+  // can represent: structured (field+equal/oneOf/gt/gte/lt/lte or negation)
+  // or a simple expression filter (datum.field <op> value).
+  let textPreserve = '';
+  _filterSelected = new Set();
+  const matchPanelFilter = (t) => {
+    if (!t || !t.filter) return null;
+    const f = t.filter;
+    if (typeof f === 'string') {
+      const p = _parseExpressionFilter(f);
+      if (!p) return null;
+      // Normalize into the same structured shape so the rest of the sync
+      // code below doesn't need to special-case expression filters.
+      if (p.op === '!=') return { not: { field: p.field, equal: p.val } };
+      if (p.op === '==') return { field: p.field, equal: p.val };
+      const k = { '>':'gt', '>=':'gte', '<':'lt', '<=':'lte' }[p.op];
+      return { field: p.field, [k]: p.val };
+    }
+    if (f.not && f.not.field && ('equal' in f.not || 'oneOf' in f.not)) return f;
+    if (f.field && ('equal' in f || 'oneOf' in f || 'gt' in f || 'gte' in f || 'lt' in f || 'lte' in f)) return f;
+    return null;
+  };
+  const ownFilter = Array.isArray(spec.transform)
+    ? spec.transform.map(matchPanelFilter).find(Boolean)
+    : null;
+  if (ownFilter) {
+    let field = '', op = '==';
+    const seedSelected = (v) => {
+      if (Array.isArray(v)) v.forEach(x => _filterSelected.add(String(x)));
+      else _filterSelected.add(String(v));
+    };
+    if (ownFilter.not && ownFilter.not.field) {
+      field = ownFilter.not.field;
+      op = '!=';
+      if ('oneOf' in ownFilter.not) seedSelected(ownFilter.not.oneOf);
+      else                          seedSelected(ownFilter.not.equal);
+    } else {
+      field = ownFilter.field;
+      if      ('equal' in ownFilter) { op = '==';    seedSelected(ownFilter.equal); }
+      else if ('oneOf' in ownFilter) { op = 'oneOf'; seedSelected(ownFilter.oneOf); }
+      else if ('gt'    in ownFilter) { op = '>';     textPreserve = String(ownFilter.gt);  }
+      else if ('gte'   in ownFilter) { op = '>=';    textPreserve = String(ownFilter.gte); }
+      else if ('lt'    in ownFilter) { op = '<';     textPreserve = String(ownFilter.lt);  }
+      else if ('lte'   in ownFilter) { op = '<=';    textPreserve = String(ownFilter.lte); }
+    }
+    document.getElementById('pp-filter-field').value = field;
+    document.getElementById('pp-filter-op').value    = op;
+    _ownedFilterField = field;
+  } else {
+    document.getElementById('pp-filter-field').value = '';
+    _ownedFilterField = null;
+  }
+  _buildFilterValueWidget({ preserveText: textPreserve });
+
+  // Facet — check outer-facet form first, then fall back to encoding.facet.
+  const isOuterFaceted = !!(root.facet && root.spec);
+  const facet = isOuterFaceted ? root.facet : (spec.encoding && spec.encoding.facet);
+  if (facet && facet.field) {
+    document.getElementById('pp-facet-field').value = facet.field;
+    document.getElementById('pp-facet-type').value  = facet.type || 'nominal';
+    // For outer-facet form, columns sits at root (sibling of facet). For
+    // encoding.facet form, columns lives inside the facet object.
+    const cols = isOuterFaceted
+      ? (root.columns != null ? root.columns : (facet.columns != null ? facet.columns : ''))
+      : (facet.columns != null ? facet.columns : '');
+    document.getElementById('pp-facet-cols').value = cols;
+    // Title + header sizes — live under facet.header in both forms.
+    const header = facet.header || {};
+    const title  = header.title != null ? header.title : (typeof facet.title === 'string' ? facet.title : '');
+    document.getElementById('pp-facet-title').value      = title;
+    document.getElementById('pp-facet-title-size').value = header.titleFontSize != null ? header.titleFontSize : '';
+    document.getElementById('pp-facet-label-size').value = header.labelFontSize != null ? header.labelFontSize : '';
+  } else {
+    document.getElementById('pp-facet-field').value      = '';
+    document.getElementById('pp-facet-cols').value       = '';
+    document.getElementById('pp-facet-title').value      = '';
+    document.getElementById('pp-facet-title-size').value = '';
+    document.getElementById('pp-facet-label-size').value = '';
+  }
+  // Share axes — when outer-faceted, resolve lives on the inner spec; otherwise on root.
+  const resolveOwner = (root.facet && root.spec) ? root.spec : spec;
+  const resolveScale = resolveOwner.resolve && resolveOwner.resolve.scale;
+  document.getElementById('pp-facet-share-x').checked = !(resolveScale && resolveScale.x === 'independent');
+  document.getElementById('pp-facet-share-y').checked = !(resolveScale && resolveScale.y === 'independent');
+
+  // Sort (X or Y) — prefer whichever axis currently carries a sort
+  const xSort = spec.encoding && spec.encoding.x && spec.encoding.x.sort;
+  const ySort = spec.encoding && spec.encoding.y && spec.encoding.y.sort;
+  const activeSort = (xSort && typeof xSort === 'object' && xSort.field) ? { axis: 'x', sort: xSort }
+                   : (ySort && typeof ySort === 'object' && ySort.field) ? { axis: 'y', sort: ySort }
+                   : null;
+  if (activeSort) {
+    document.getElementById('pp-sort-axis').value  = activeSort.axis;
+    document.getElementById('pp-sort-field').value = activeSort.sort.field;
+    document.getElementById('pp-sort-order').value = activeSort.sort.order || 'ascending';
+  } else {
+    document.getElementById('pp-sort-field').value = '';
+  }
+}
+
+// ── Wire up all controls ──────────────────────────────────────
+(function initPropsPanel() {
+  document.getElementById('btn-collapse-all').onclick = () => {
+    document.querySelectorAll('.props-section').forEach(s => s.classList.remove('open'));
+  };
+  // Title — use 'change' on text/number so we don't re-render mid-typing
+  ['pp-title-text', 'pp-title-sub', 'pp-title-size', 'pp-title-sub-size', 'pp-title-anchor'].forEach(id =>
+    document.getElementById(id).addEventListener('change', applyTitleProps));
+  document.getElementById('pp-title-color').addEventListener('input', () => {
+    // Keep sub colour in sync unless the user has already diverged it
+    const titleCol = document.getElementById('pp-title-color').value;
+    const subCol   = document.getElementById('pp-title-sub-color').value;
+    if (subCol === document.getElementById('pp-title-color').dataset.lastSync || !document.getElementById('pp-title-color').dataset.lastSync) {
+      document.getElementById('pp-title-sub-color').value = titleCol;
+    }
+    document.getElementById('pp-title-color').dataset.lastSync = titleCol;
+    applyTitleProps();
+  });
+  document.getElementById('pp-title-sub-color').addEventListener('input', applyTitleProps);
+
+  // X/Y axis and Marks — events are wired dynamically by rebuildAxisSection() / rebuildMarkSection()
+
+  // Legend
+  document.getElementById('pp-legend-show').addEventListener('change', applyLegendProps);
+  document.getElementById('pp-legend-orient').addEventListener('change', applyLegendProps);
+
+  // Layout
+  document.getElementById('pp-width').addEventListener('change', applyLayoutProps);
+  document.getElementById('pp-height').addEventListener('change', applyLayoutProps);
+  document.getElementById('pp-padding').addEventListener('change', applyLayoutProps);
+  document.getElementById('pp-bg-color').addEventListener('input', applyLayoutProps);
+
+  // Transform — filter. Field/operator changes rebuild the value widget;
+  // a field change also clears any previous value selection so we start fresh.
+  document.getElementById('pp-filter-field').addEventListener('change', () => {
+    _filterSelected = new Set();
+    _buildFilterValueWidget();
+    applyFilterProp();
+  });
+  document.getElementById('pp-filter-op').addEventListener('change', () => {
+    _buildFilterValueWidget();
+    applyFilterProp();
+  });
+  // Transform — facet
+  ['pp-facet-field', 'pp-facet-type', 'pp-facet-cols', 'pp-facet-title',
+   'pp-facet-title-size', 'pp-facet-label-size',
+   'pp-facet-share-x', 'pp-facet-share-y'].forEach(id =>
+    document.getElementById(id).addEventListener('change', applyFacetProp));
+  // Transform — sort
+  ['pp-sort-axis', 'pp-sort-field', 'pp-sort-order'].forEach(id =>
+    document.getElementById(id).addEventListener('change', applySortProp));
+
+  // Initial build of the filter value widget so the slot isn't empty on load
+  _buildFilterValueWidget();
+})();

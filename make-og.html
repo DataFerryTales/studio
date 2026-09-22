@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ferry Tales Studio — Generate OG Image</title>
+<style>
+  body { margin: 0; background: #050506; display: flex; flex-direction: column; align-items: center; padding: 30px; font-family: system-ui, Arial, sans-serif; }
+  canvas { border: 1px solid #2e2e34; border-radius: 8px; max-width: 100%; }
+  button {
+    margin-top: 20px; padding: 12px 36px; font-size: 15px; font-weight: 700;
+    letter-spacing: 0.08em; background: #f59e0b; color: #0a0a0b;
+    border: none; border-radius: 6px; cursor: pointer;
+  }
+  button:hover { background: #fbbf24; }
+  p { color: #7e7e92; font-size: 13px; margin-top: 12px; text-align: center; max-width: 700px; line-height: 1.6; }
+  strong { color: #e4e4e8; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1200" height="630"></canvas>
+<button onclick="download()">⬇ Download og-image.png</button>
+<p>
+  Save <strong>og-image.png</strong>, drop it into the root of the repo alongside <strong>vegalite.html</strong>, and push.
+  The social card will then work on Bluesky, Twitter/X, LinkedIn and Facebook.
+  You only need to run this once (or again if you update the branding).
+</p>
+
+<script>
+// ─── palette ───────────────────────────────────────────────────────────────
+const C = {
+  bg:       '#0a0a0b',
+  surface:  '#111113',
+  surface2: '#19191d',
+  border:   '#222226',
+  border2:  '#2e2e34',
+  text:     '#e4e4e8',
+  muted:    '#7e7e92',
+  dim:      '#8888a0',
+  accent:   '#f59e0b',
+  accent2:  '#fb923c',
+  blue:     '#60a5fa',
+  teal:     '#34d399',
+  green:    '#86efac',
+  blueK:    '#7dd3fc',
+};
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+function rr(ctx, x, y, w, h, r, fill, stroke, sw, alpha) {
+  const tl = Array.isArray(r) ? r[0] : r;
+  const tr = Array.isArray(r) ? r[1] : r;
+  const br = Array.isArray(r) ? r[2] : r;
+  const bl = Array.isArray(r) ? r[3] : r;
+  ctx.beginPath();
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + w - tr, y);  ctx.arcTo(x + w, y,     x + w, y + tr,     tr);
+  ctx.lineTo(x + w, y + h - br); ctx.arcTo(x + w, y + h, x + w - br, y + h, br);
+  ctx.lineTo(x + bl, y + h);  ctx.arcTo(x,     y + h, x,     y + h - bl, bl);
+  ctx.lineTo(x, y + tl);      ctx.arcTo(x,     y,     x + tl, y,         tl);
+  ctx.closePath();
+  if (alpha !== undefined) ctx.globalAlpha = alpha;
+  if (fill)   { ctx.fillStyle   = fill;  ctx.fill(); }
+  ctx.globalAlpha = 1;
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = sw || 1; ctx.stroke(); }
+}
+
+function txt(ctx, str, x, y, font, color, align) {
+  ctx.font      = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(str, x, y);
+}
+
+// ─── draw ───────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+// Background
+ctx.fillStyle = C.bg;
+ctx.fillRect(0, 0, 1200, 630);
+
+// Outer border
+rr(ctx, 18, 18, 1164, 594, 14, null, C.border2, 1.5);
+
+// Left amber accent stripe
+rr(ctx, 18, 18, 6, 594, [14, 0, 0, 14], C.accent);
+
+// Subtle diagonal texture
+ctx.strokeStyle = 'rgba(255,255,255,0.018)';
+ctx.lineWidth = 1;
+for (let i = -630; i < 1200; i += 38) {
+  ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 630, 630); ctx.stroke();
+}
+
+// ─────────────────────────────────────────────────────
+// RIGHT: styled chart preview box
+// ─────────────────────────────────────────────────────
+const cX = 655, cY = 52, cW = 502, cH = 526;
+rr(ctx, cX, cY, cW, cH, 10, C.surface, C.border2, 1.5);
+
+// Panel title bar
+rr(ctx, cX, cY, cW, 34, [10, 10, 0, 0], C.surface2);
+[14, 28, 42].forEach(ox => {
+  ctx.fillStyle = C.border2;
+  ctx.beginPath(); ctx.arc(cX + ox, cY + 17, 5, 0, Math.PI * 2); ctx.fill();
+});
+txt(ctx, 'CHART PREVIEW', cX + cW / 2, cY + 22, '700 11px system-ui', C.muted, 'center');
+
+// Grid lines
+ctx.strokeStyle = C.border;
+ctx.lineWidth = 1;
+const plotY1 = cY + 44, plotY2 = cY + cH - 60;
+for (let i = 1; i <= 4; i++) {
+  const gy = plotY1 + i * ((plotY2 - plotY1) / 5);
+  ctx.beginPath(); ctx.moveTo(cX + 22, gy); ctx.lineTo(cX + cW - 22, gy); ctx.stroke();
+}
+
+// Bars
+const bars = [
+  { v: 0.58, col: C.blue },
+  { v: 0.82, col: C.blue },
+  { v: 0.38, col: C.accent2, min: true },
+  { v: 0.70, col: C.blue },
+  { v: 0.93, col: C.blue, max: true },
+  { v: 0.52, col: C.blue },
+  { v: 0.75, col: C.blue },
+];
+const bpX = cX + 36, bpW = cW - 72, bpH = plotY2 - plotY1;
+const barW = (bpW - (bars.length - 1) * 10) / bars.length;
+
+bars.forEach((b, i) => {
+  const bh = b.v * bpH;
+  const bx = bpX + i * (barW + 10);
+  const by = plotY1 + bpH - bh;
+  rr(ctx, bx, by, barW, bh, [4, 4, 0, 0], b.col, null, 0, b.min ? 0.70 : 0.85);
+  if (b.max) {
+    ctx.fillStyle = C.teal;
+    ctx.beginPath(); ctx.arc(bx + barW / 2, by - 1, 9, 0, Math.PI * 2); ctx.fill();
+    txt(ctx, 'MAX', bx + barW / 2, by - 16, '700 10px system-ui', C.teal, 'center');
+  }
+  if (b.min) {
+    ctx.fillStyle = C.accent;
+    ctx.beginPath(); ctx.arc(bx + barW / 2, by - 1, 9, 0, Math.PI * 2); ctx.fill();
+    txt(ctx, 'MIN', bx + barW / 2, by - 16, '700 10px system-ui', C.accent, 'center');
+  }
+});
+
+// x-axis
+ctx.strokeStyle = C.border2; ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(bpX, plotY2); ctx.lineTo(bpX + bpW, plotY2); ctx.stroke();
+
+['Jan','Feb','Mar','Apr','May','Jun','Jul'].forEach((lbl, i) => {
+  const lx = bpX + i * (barW + 10) + barW / 2;
+  txt(ctx, lbl, lx, plotY2 + 18, '400 10px system-ui', C.muted, 'center');
+});
+
+// ─────────────────────────────────────────────────────
+// LEFT: branding — big title + taglines
+// ─────────────────────────────────────────────────────
+
+// Title
+txt(ctx, 'FERRY TALES', 58, 210, '900 90px system-ui', C.accent);
+txt(ctx, 'STUDIO', 58, 312, '900 90px system-ui', C.accent);
+
+// Separator
+ctx.strokeStyle = C.border2; ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(60, 346); ctx.lineTo(600, 346); ctx.stroke();
+
+// Taglines
+txt(ctx, 'Build Vega-Lite charts in your browser', 60, 400, '400 23px system-ui', C.dim);
+txt(ctx, 'Properties panel auto-generates the JSON spec', 60, 444, '400 23px system-ui', C.dim);
+
+// ── Bottom: feature pills + URL ──────────────────────
+const pillY = 560;
+const pillDefs = [
+  { label: 'Live Preview',      bg: 'rgba(34,197,94,0.10)',  border: 'rgba(34,197,94,0.35)', col: '#4ade80' },
+  { label: 'Properties Panel',  bg: C.surface2,              border: C.border2,              col: C.text   },
+  { label: 'Share → Deneb',     bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.4)', col: C.accent },
+];
+
+ctx.font = '700 12px system-ui';
+let px = 60;
+pillDefs.forEach(p => {
+  const tw = ctx.measureText(p.label).width + 26;
+  const ph = 30, py = pillY - ph / 2;
+  rr(ctx, px, py, tw, ph, 15, p.bg, p.border, 1);
+  txt(ctx, p.label, px + tw / 2, pillY + 4, '700 12px system-ui', p.col, 'center');
+  px += tw + 8;
+});
+
+// URL
+txt(ctx, 'dataferrytales.github.io', 1140, pillY + 4, '400 13px system-ui', C.muted, 'right');
+
+// ─────────────────────────────────────────────────────
+function download() {
+  const a = document.createElement('a');
+  a.download = 'og-image.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferry Tales Studio — Vega-Lite Chart Editor</title>
+<meta name="description" content="A browser-based Vega-Lite chart editor. Write JSON, preview live, no sign-in required.">
+<!-- Open Graph / social cards -->
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://dataferrytales.github.io/studio/vegalite.html">
+<meta property="og:title"       content="Ferry Tales Studio — Vega-Lite Chart Editor">
+<meta property="og:description" content="A browser-based Vega-Lite chart editor. Write JSON, preview live, no sign-in required.">
+<meta property="og:image"       content="https://dataferrytales.github.io/studio/og-image.png">
+<meta property="og:image:type"   content="image/png">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<!-- Twitter / X card -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Ferry Tales Studio — Vega-Lite Chart Editor">
+<meta name="twitter:description" content="A browser-based Vega-Lite chart editor. Write JSON, preview live, no sign-in required.">
+<meta name="twitter:image"       content="https://dataferrytales.github.io/studio/og-image.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vega/5.30.0/vega.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.21.0/vega-lite.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.26.0/vega-embed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+<link rel="stylesheet" href="vegalite.css">
+</head>
+<body>
+<div id="app">
+  <!-- ─── HEADER ─── -->
+  <header class="header">
+    <div class="logo">
+      <div>
+        <div class="logo-text">FERRY TALES STUDIO</div>
+        <div class="logo-sub">vega-lite builder</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="template-rail" id="template-rail"></div>
+    <button class="btn" id="btn-theme-toggle" title="Switch between dark and light mode">☀ LIGHT</button>
+    <div class="share-wrap">
+      <button class="btn" id="btn-share-options" title="Share and export options">⬡ SHARE ▾</button>
+      <div class="share-menu" id="share-menu">
+        <button class="share-opt" id="sopt-spec">SHARE SPEC<span class="share-opt-desc">Copy full spec JSON to clipboard</span></button>
+        <button class="share-opt" id="sopt-visual">SHARE VISUAL<span class="share-opt-desc">Copy link to your datavis</span></button>
+        <button class="share-opt" id="sopt-copy-img">COPY IMAGE<span class="share-opt-desc">Copy chart as PNG to clipboard</span></button>
+        <button class="share-opt" id="sopt-save-png">SAVE AS PNG<span class="share-opt-desc">Download chart as PNG file</span></button>
+        <button class="share-opt" id="sopt-save-svg">SAVE AS SVG<span class="share-opt-desc">Download chart as scalable vector</span></button>
+        <button class="share-opt" id="sopt-vega-editor">OPEN IN VEGA EDITOR<span class="share-opt-desc">Open spec in the online Vega editor</span></button>
+        <button class="share-opt" id="sopt-view-vega">VIEW AS VEGA<span class="share-opt-desc">Compile to full Vega spec</span></button>
+        <button class="share-opt" id="sopt-view-deneb">VIEW AS DENEB<span class="share-opt-desc">Format spec for Power BI Deneb</span></button>
+      </div>
+    </div>
+    <button class="btn" id="btn-present" title="Play captured presentation">▶ PRESENT<span class="capture-badge hidden" id="capture-count"></span></button>
+    <button class="btn" id="btn-help" title="Open help guide">? HELP</button>
+    <a class="btn" href="https://dataferrytales.github.io/" target="_blank" rel="noopener" title="Visit Ferry Tales website">⬡ WEBSITE</a>
+  </header>
+
+  <!-- ─── WORKSPACE ─── -->
+  <div class="workspace">
+
+    <!-- ─── PROPERTIES PANEL ─── -->
+    <div id="props-panel">
+      <div id="props-toggle">
+        <span id="props-toggle-label">PROPERTIES</span>
+        <span id="props-toggle-icon">◀</span>
+      </div>
+      <div id="props-body">
+        <div style="padding:6px 10px 4px;display:flex;gap:6px;border-bottom:1px solid var(--border);">
+          <button class="btn" id="btn-capture" style="flex:1;font-size:11px;padding:4px 8px;" title="Save current chart state as a presentation step">⏺ CAPTURE</button>
+          <button class="btn" id="btn-collapse-all" style="flex:1;font-size:11px;padding:4px 8px;" title="Collapse all sections">COLLAPSE ALL</button>
+        </div>
+
+        <!-- TITLE -->
+        <div class="props-section" id="ps-title">
+          <div class="props-section-head" onclick="toggleSection('ps-title')">
+            <span>TITLE</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Text</span>
+              <div class="prop-ctrl"><input type="text" id="pp-title-text" placeholder="Chart title"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Subtitle</span>
+              <div class="prop-ctrl"><input type="text" id="pp-title-sub" placeholder="Subtitle"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Size</span>
+              <div class="prop-ctrl"><input type="number" id="pp-title-size" min="8" max="48" placeholder="14"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Colour</span>
+              <div class="prop-ctrl"><input type="color" id="pp-title-color" value="#e4e4e8"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Sub size</span>
+              <div class="prop-ctrl"><input type="number" id="pp-title-sub-size" min="8" max="48" placeholder="12"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Sub colour</span>
+              <div class="prop-ctrl"><input type="color" id="pp-title-sub-color" value="#e4e4e8"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Anchor</span>
+              <div class="prop-ctrl">
+                <select id="pp-title-anchor">
+                  <option value="start">Left</option>
+                  <option value="middle">Centre</option>
+                  <option value="end">Right</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- X AXIS — body is built dynamically by rebuildAxisSection() -->
+        <div class="props-section" id="ps-xaxis">
+          <div class="props-section-head" onclick="toggleSection('ps-xaxis')">
+            <span>X AXIS</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body"></div>
+        </div>
+
+        <!-- Y AXIS — body is built dynamically by rebuildAxisSection() -->
+        <div class="props-section" id="ps-yaxis">
+          <div class="props-section-head" onclick="toggleSection('ps-yaxis')">
+            <span>Y AXIS</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body"></div>
+        </div>
+
+        <!-- MARKS — body is built dynamically by rebuildMarkSection() -->
+        <div class="props-section" id="ps-marks">
+          <div class="props-section-head" onclick="toggleSection('ps-marks')">
+            <span>MARKS</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body"></div>
+        </div>
+
+        <!-- TRANSFORM -->
+        <div class="props-section" id="ps-transform">
+          <div class="props-section-head" onclick="toggleSection('ps-transform')">
+            <span>TRANSFORM</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">FILTER</div>
+            <div class="prop-row">
+              <span class="prop-label">Field</span>
+              <div class="prop-ctrl"><select id="pp-filter-field"><option value="">— none —</option></select></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Operator</span>
+              <div class="prop-ctrl">
+                <select id="pp-filter-op">
+                  <option value="==">equals</option>
+                  <option value="!=">not equals</option>
+                  <option value=">">greater than</option>
+                  <option value=">=">greater or equal</option>
+                  <option value="<">less than</option>
+                  <option value="<=">less or equal</option>
+                  <option value="oneOf">is one of</option>
+                </select>
+              </div>
+            </div>
+            <div class="prop-row" id="pp-filter-value-row">
+              <span class="prop-label">Value</span>
+              <div class="prop-ctrl" id="pp-filter-value-slot"></div>
+            </div>
+
+            <div class="props-subsection-divider" style="margin:10px 0;"></div>
+
+            <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">FACET</div>
+            <div class="prop-row">
+              <span class="prop-label">Field</span>
+              <div class="prop-ctrl"><select id="pp-facet-field"><option value="">— none —</option></select></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Type</span>
+              <div class="prop-ctrl">
+                <select id="pp-facet-type">
+                  <option value="nominal">Nominal</option>
+                  <option value="ordinal">Ordinal</option>
+                  <option value="temporal">Temporal</option>
+                </select>
+              </div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Columns</span>
+              <div class="prop-ctrl"><input type="number" id="pp-facet-cols" min="1" max="12" placeholder="auto"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Title</span>
+              <div class="prop-ctrl"><input type="text" id="pp-facet-title" placeholder="auto"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Title size</span>
+              <div class="prop-ctrl"><input type="number" id="pp-facet-title-size" min="6" max="48" placeholder="12"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Label size</span>
+              <div class="prop-ctrl"><input type="number" id="pp-facet-label-size" min="6" max="32" placeholder="11"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Share X axis</span>
+              <div class="prop-ctrl"><input type="checkbox" id="pp-facet-share-x" checked></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Share Y axis</span>
+              <div class="prop-ctrl"><input type="checkbox" id="pp-facet-share-y" checked></div>
+            </div>
+
+            <div class="props-subsection-divider" style="margin:10px 0;"></div>
+
+            <div style="font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:6px;">SORT</div>
+            <div class="prop-row">
+              <span class="prop-label">Axis</span>
+              <div class="prop-ctrl">
+                <select id="pp-sort-axis">
+                  <option value="x">X axis</option>
+                  <option value="y">Y axis</option>
+                </select>
+              </div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">By field</span>
+              <div class="prop-ctrl"><select id="pp-sort-field"><option value="">— default —</option></select></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Order</span>
+              <div class="prop-ctrl">
+                <select id="pp-sort-order">
+                  <option value="ascending">Ascending</option>
+                  <option value="descending">Descending</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAYOUT -->
+        <div class="props-section" id="ps-layout">
+          <div class="props-section-head" onclick="toggleSection('ps-layout')">
+            <span>LAYOUT</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Width</span>
+              <div class="prop-ctrl"><input type="number" id="pp-width" min="1" max="4000" placeholder="auto"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Height</span>
+              <div class="prop-ctrl"><input type="number" id="pp-height" min="1" max="4000" placeholder="auto"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Padding</span>
+              <div class="prop-ctrl"><input type="number" id="pp-padding" min="0" max="100" placeholder="5"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Background</span>
+              <div class="prop-ctrl"><input type="color" id="pp-bg-color" value="#020d18"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="props-section" id="ps-legend">
+          <div class="props-section-head" onclick="toggleSection('ps-legend')">
+            <span>LEGEND</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Show</span>
+              <div class="prop-ctrl"><input type="checkbox" id="pp-legend-show" checked></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Orient</span>
+              <div class="prop-ctrl">
+                <select id="pp-legend-orient">
+                  <option value="right">Right</option>
+                  <option value="left">Left</option>
+                  <option value="top">Top</option>
+                  <option value="bottom">Bottom</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="top-left">Top Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /props-body -->
+
+      <!-- ─── CONFIG PROPERTIES PANEL ─── -->
+      <div id="config-props-body" style="display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0;">
+
+        <!-- CANVAS -->
+        <div class="props-section" id="cps-canvas">
+          <div class="props-section-head" onclick="toggleSection('cps-canvas')">
+            <span>CANVAS</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Background</span>
+              <div class="prop-ctrl"><input type="color" id="cp-background" value="#020d18"
+                onchange="patchConfig(cfg => { cfg.background = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">View border</span>
+              <div class="prop-ctrl" style="display:flex;align-items:center;gap:6px;">
+                <input type="checkbox" id="chk-view-stroke" title="Enable view border"
+                  onchange="patchConfig(cfg => { if (!cfg.view) cfg.view = {}; cfg.view.stroke = this.checked ? document.getElementById('cp-view-stroke').value : null; })">
+                <input type="color" id="cp-view-stroke" value="#cccccc"
+                  onchange="patchConfig(cfg => { if (!cfg.view) cfg.view = {}; cfg.view.stroke = this.value; document.getElementById('chk-view-stroke').checked = true; })">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TYPOGRAPHY -->
+        <div class="props-section" id="cps-typography">
+          <div class="props-section-head" onclick="toggleSection('cps-typography')">
+            <span>TYPOGRAPHY</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Font</span>
+              <div class="prop-ctrl">
+                <select id="cp-font" onchange="patchConfig(cfg => { cfg.font = this.value; })">
+                  <option value="Calibri, sans-serif">Calibri</option>
+                  <option value="Verdana, sans-serif">Verdana</option>
+                  <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                  <option value="Gill Sans, Gill Sans MT, sans-serif">Gill Sans</option>
+                  <option value="Optima, Candara, sans-serif">Optima</option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Helvetica Neue, Helvetica, sans-serif">Helvetica Neue</option>
+                  <option value="Monaco, Consolas, monospace">Monaco</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MARKS -->
+        <div class="props-section" id="cps-marks">
+          <div class="props-section-head" onclick="toggleSection('cps-marks')">
+            <span>MARKS</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Default colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-mark-color" value="#4c9be8"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PALETTE -->
+        <div class="props-section" id="cps-palette">
+          <div class="props-section-head" onclick="toggleSection('cps-palette')">
+            <span>PALETTE</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="cfg-palette" id="cp-palette"></div>
+          </div>
+        </div>
+
+        <!-- AXES -->
+        <div class="props-section" id="cps-axes">
+          <div class="props-section-head" onclick="toggleSection('cps-axes')">
+            <span>AXES</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Label colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-axis-label-color" value="#e4e4e8"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.labelColor = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Title colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-axis-title-color" value="#e4e4e8"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.titleColor = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Grid colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-axis-grid-color" value="#2a3a4a"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.gridColor = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Domain colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-axis-domain-color" value="#2a3a4a"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.domainColor = this.value; cfg.axis.tickColor = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Label size</span>
+              <div class="prop-ctrl"><input type="number" id="cp-axis-label-size" min="6" max="32" placeholder="11"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.labelFontSize = +this.value || undefined; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Title size</span>
+              <div class="prop-ctrl"><input type="number" id="cp-axis-title-size" min="6" max="32" placeholder="12"
+                onchange="patchConfig(cfg => { if (!cfg.axis) cfg.axis = {}; cfg.axis.titleFontSize = +this.value || undefined; })"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="props-section" id="cps-legend">
+          <div class="props-section-head" onclick="toggleSection('cps-legend')">
+            <span>LEGEND</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Label colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-legend-label-color" value="#e4e4e8"
+                onchange="patchConfig(cfg => { if (!cfg.legend) cfg.legend = {}; cfg.legend.labelColor = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Label size</span>
+              <div class="prop-ctrl"><input type="number" id="cp-legend-label-size" min="6" max="32" placeholder="11"
+                onchange="patchConfig(cfg => { if (!cfg.legend) cfg.legend = {}; cfg.legend.labelFontSize = +this.value || undefined; })"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TITLE -->
+        <div class="props-section" id="cps-title">
+          <div class="props-section-head" onclick="toggleSection('cps-title')">
+            <span>TITLE</span><span class="props-section-arrow">▶</span>
+          </div>
+          <div class="props-section-body">
+            <div class="prop-row">
+              <span class="prop-label">Colour</span>
+              <div class="prop-ctrl"><input type="color" id="cp-title-color" value="#e4e4e8"
+                onchange="patchConfig(cfg => { if (!cfg.title) cfg.title = {}; cfg.title.color = this.value; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Font size</span>
+              <div class="prop-ctrl"><input type="number" id="cp-title-font-size" min="6" max="48" placeholder="14"
+                onchange="patchConfig(cfg => { if (!cfg.title) cfg.title = {}; cfg.title.fontSize = +this.value || undefined; })"></div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Anchor</span>
+              <div class="prop-ctrl">
+                <select id="cp-title-anchor" onchange="patchConfig(cfg => { if (!cfg.title) cfg.title = {}; cfg.title.anchor = this.value; })">
+                  <option value="start">Left</option>
+                  <option value="middle">Centre</option>
+                  <option value="end">Right</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /config-props-body -->
+
+    </div><!-- /props-panel -->
+
+    <!-- ─── LEFT PANEL (tabbed) ─── -->
+    <div class="panel left-panel">
+
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-btn" id="tab-btn-data" onclick="switchTab('data')">
+          <span class="tab-icon">⊡</span> USE YOUR OWN DATA
+        </button>
+        <button class="tab-btn active" id="tab-btn-spec" onclick="switchEditorView('spec')">
+          <span class="tab-icon">{ }</span> SPEC
+        </button>
+        <button class="tab-btn" id="tab-btn-config" onclick="switchEditorView('config')">
+          <span class="tab-icon">⚙</span> CONFIG
+        </button>
+        <select id="cfg-preset-select" title="Switch theme" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:3px;padding:3px 6px;font-size:13px;font-weight:400;font-family:var(--font);cursor:pointer;align-self:center;margin-left:6px;"></select>
+        <div class="tab-bar-right">
+          <div class="tab-actions hidden" id="tab-actions-data">
+            <button class="btn" id="btn-paste">PASTE</button>
+          </div>
+          <div class="tab-actions hidden" id="tab-actions-config">
+          </div>
+          <div class="tab-actions" id="tab-actions-spec">
+            <button class="btn" id="btn-run" title="Render chart (Ctrl+Enter)" style="display:none">▶ RUN</button>
+            <button class="btn btn-primary" id="btn-live-toggle" title="Toggle live vs manual rendering">⚡ LIVE</button>
+            <button class="btn" id="btn-format">FORMAT</button>
+            <button class="btn" id="btn-reset-template" title="Reset current template to default">↺ RESET</button>
+            <div class="add-layer-wrap" id="add-layer-wrap">
+              <button class="btn" id="btn-add-layer" title="Add a new layer">+ LAYER ▾</button>
+              <div class="add-layer-menu" id="add-layer-menu">
+                <button class="add-layer-opt" data-type="text">Text labels</button>
+                <button class="add-layer-opt" data-type="bar">Bar</button>
+                <button class="add-layer-opt" data-type="line">Line</button>
+                <button class="add-layer-opt" data-type="point">Point</button>
+                <button class="add-layer-opt" data-type="rule">Rule</button>
+              </div>
+            </div>
+            <div class="zoom-ctrl">
+              <button class="zoom-btn" id="btn-edz-out" title="Decrease font size">−</button>
+              <span class="zoom-lbl" id="edz-label">14px</span>
+              <button class="zoom-btn" id="btn-edz-in"  title="Increase font size">+</button>
+            </div>
+            <span style="font-size:10px;color:var(--muted);letter-spacing:0.1em">AUTO</span>
+            <div class="dot dot-spin" id="status-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATA tab -->
+      <div class="tab-content hidden" id="tab-data">
+        <div class="data-body">
+          <div class="section">
+            <div class="sec-label">SAMPLE DATASETS</div>
+            <div class="sample-chips" id="sample-chips"></div>
+          </div>
+          <div class="section">
+            <label class="upload-zone" id="upload-zone">
+              <span class="uz-icon">⬆</span>
+              <span class="uz-text">DROP FILE HERE</span>
+              <span class="uz-hint">CSV · JSON · TSV</span>
+              <input type="file" id="file-input" accept=".csv,.json,.tsv">
+            </label>
+          </div>
+          <div class="section hidden" id="fields-section">
+            <div class="sec-label">FIELDS <span id="row-label"></span></div>
+            <div class="field-list" id="field-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SPEC tab -->
+      <div class="tab-content" id="tab-spec">
+        <div id="spec-editor-wrap"></div>
+        <div class="error-bar hidden" id="error-bar"></div>
+      </div>
+
+    </div><!-- /left-panel -->
+
+    <!-- ─── VERTICAL RESIZER ─── -->
+    <div id="resizer-v" class="resizer-v"></div>
+
+    <!-- ─── PREVIEW PANEL ─── -->
+    <div class="panel preview-panel" id="preview-panel">
+      <div class="panel-head" style="flex-shrink:0">
+        PREVIEW
+        <div class="panel-head-right">
+          <button class="btn btn-fit" id="btn-fit" title="Fit chart to available frame">
+            <span class="btn-fit-icon">⤢</span> FIT
+          </button>
+          <div class="zoom-ctrl">
+            <button class="zoom-btn" id="btn-pvz-out" title="Zoom out">−</button>
+            <span class="zoom-lbl" id="pvz-label">100%</span>
+            <button class="zoom-btn" id="btn-pvz-in"  title="Zoom in">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="preview-top" id="preview-top">
+        <div id="preview-zoom-wrap">
+          <div id="vega-container"></div>
+        </div>
+      </div>
+      <!-- Console messages -->
+      <div class="console-panel" id="console-panel">
+        <div class="console-head">
+          CONSOLE MESSAGES
+          <button class="console-clear" id="btn-console-clear">✕ CLEAR</button>
+        </div>
+        <div id="console-messages"></div>
+      </div>
+      <!-- Horizontal resizer -->
+      <div id="resizer-h" class="resizer-h"></div>
+      <!-- Data table -->
+      <div class="data-bottom" id="data-bottom">
+        <div class="data-bottom-head">
+          DATA
+          <span class="db-info" id="db-info"></span>
+          <span class="db-badge" id="db-badge"></span>
+          <input type="text" id="dt-search" class="dt-search" placeholder="search…" autocomplete="off">
+          <div class="zoom-ctrl">
+            <button class="zoom-btn" id="btn-dtz-out" title="Decrease table font size">−</button>
+            <span class="zoom-lbl" id="dtz-label">12px</span>
+            <button class="zoom-btn" id="btn-dtz-in"  title="Increase table font size">+</button>
+          </div>
+        </div>
+        <div class="data-grid-wrap" id="data-grid-wrap">
+          <div class="db-empty">
+            <span class="db-empty-icon">⊡</span>
+            No data loaded — use the DATA tab to connect a dataset
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+</div><!-- /app -->
+
+<!-- Intellisense popup -->
+<div class="intellisense hidden" id="intellisense"></div>
+
+<!-- ─── HELP OVERLAY ─── -->
+<div class="help-overlay hidden" id="help-overlay">
+  <div class="help-modal">
+    <div class="help-head">
+      <div class="help-head-left">
+        <div class="help-head-title">FERRY TALES STUDIO — HELP</div>
+        <div class="help-head-sub">A visual guide to the studio layout and every panel's purpose</div>
+      </div>
+      <button class="help-close" id="btn-help-close" title="Close help">✕</button>
+    </div>
+    <div class="help-body">
+
+      <div class="hd-diagram">
+
+        <!-- ── Header row ── -->
+        <div class="hd-row-hdr">
+
+          <div class="hd-zone hd-logo">
+            <div class="hd-logo-text">FERRY<br>TALES<br>STUDIO</div>
+          </div>
+
+          <div class="hd-zone hd-templates">
+            <div class="hd-zone-label">CHART TEMPLATES</div>
+            <div class="hd-pills">
+              <span class="hd-pill hd-pill-ac">Bar</span>
+              <span class="hd-pill">Line</span>
+              <span class="hd-pill">Scatter</span>
+              <span class="hd-pill">Facet</span>
+              <span class="hd-pill">Donut</span>
+              <span class="hd-pill">Map</span>
+              <span class="hd-pill">···</span>
+            </div>
+            <div class="hd-zone-sep"></div>
+            <div class="hd-zone-text">Ready-made starting points. Click any template to load its spec into the editor — edit freely from there. Your current chart is replaced.</div>
+          </div>
+
+          <div class="hd-zone hd-actions">
+            <div class="hd-zone-label">SHARE &amp; SETTINGS</div>
+            <div class="hd-pills">
+              <span class="hd-pill hd-pill-ac">SHARE SPEC</span>
+              <span class="hd-pill">SHARE VISUAL</span>
+              <span class="hd-pill">THEME ▾</span>
+              <span class="hd-pill">☀</span>
+            </div>
+            <div class="hd-zone-sep"></div>
+            <div class="hd-zone-text"><strong style="color:var(--text)">SHARE SPEC</strong> copies the full JSON + config for Deneb. <strong style="color:var(--text)">SHARE VISUAL</strong> makes a view-only link. <strong style="color:var(--text)">THEME</strong> switches colour presets. <strong style="color:var(--text)">☀</strong> toggles light/dark mode.</div>
+          </div>
+
+        </div><!-- /hd-row-hdr -->
+
+        <!-- ── Main row ── -->
+        <div class="hd-row-main">
+
+          <!-- Properties panel -->
+          <div class="hd-zone hd-props">
+            <div class="hd-zone-label">PROPERTIES PANEL</div>
+            <div class="hd-prop-item">
+              <div class="hd-prop-dot" style="background:#60a5fa"></div>
+              <span>Mark colour</span>
+            </div>
+            <div class="hd-prop-item">
+              <div class="hd-prop-dot" style="background:var(--surface2)"></div>
+              <div class="hd-prop-slider"></div>
+            </div>
+            <div class="hd-prop-item">
+              <div class="hd-prop-dot" style="background:var(--surface2)"></div>
+              <span>Opacity</span>
+            </div>
+            <div class="hd-prop-item">
+              <div class="hd-prop-dot" style="background:var(--surface2)"></div>
+              <span>Axis labels</span>
+            </div>
+            <div class="hd-prop-item">
+              <div class="hd-prop-dot" style="background:var(--surface2)"></div>
+              <span>Highlight max</span>
+            </div>
+            <div class="hd-zone-sep"></div>
+            <div class="hd-zone-text">Point-and-click controls for common settings. Every change writes back into the JSON — amber lines show exactly what changed.</div>
+          </div>
+
+          <!-- Editor -->
+          <div class="hd-zone hd-editor">
+            <div class="hd-etabs">
+              <span class="hd-etab hd-etab-on">SPEC</span>
+              <span class="hd-etab">CONFIG</span>
+              <span class="hd-etab">DATA</span>
+            </div>
+            <div class="hd-etoolbar">
+              <span class="hd-pill hd-pill-live">● LIVE</span>
+              <span class="hd-pill">RUN</span>
+              <span class="hd-pill">FORMAT</span>
+              <span class="hd-pill">FIT</span>
+              <span class="hd-pill">+ −</span>
+              <span class="hd-pill hd-pill-ac">+ TEXT LAYER ▾</span>
+            </div>
+            <div class="hd-code">
+              <span class="hd-cline"><span class="hd-cb">{</span></span>
+              <span class="hd-cline">&nbsp;&nbsp;<span class="hd-ck">"mark"</span><span class="hd-cp">: </span><span class="hd-cs">"bar"</span><span class="hd-cp">,</span></span>
+              <span class="hd-cline hd-cline-hl">&nbsp;&nbsp;<span class="hd-ck">"width"</span><span class="hd-cp">: </span><span class="hd-cn">320</span><span class="hd-cp">,</span></span>
+              <span class="hd-cline">&nbsp;&nbsp;<span class="hd-ck">"encoding"</span><span class="hd-cp">: {</span></span>
+              <span class="hd-cline">&nbsp;&nbsp;&nbsp;&nbsp;<span class="hd-ck">"x"</span><span class="hd-cp">: { </span><span class="hd-ck">"field"</span><span class="hd-cp">: </span><span class="hd-cs">"category"</span> <span class="hd-cp">},</span></span>
+              <span class="hd-cline">&nbsp;&nbsp;&nbsp;&nbsp;<span class="hd-ck">"y"</span><span class="hd-cp">: { </span><span class="hd-ck">"field"</span><span class="hd-cp">: </span><span class="hd-cs">"value"</span> <span class="hd-cp">}</span></span>
+              <span class="hd-cline">&nbsp;&nbsp;<span class="hd-cp">}</span></span>
+              <span class="hd-cline"><span class="hd-cb">}</span></span>
+            </div>
+            <div class="hd-editor-foot">
+              <div class="hd-zone-label" style="margin-bottom:3px">SPEC / CONFIG / DATA EDITOR</div>
+              <div class="hd-zone-text"><strong style="color:var(--text)">SPEC</strong> — Vega-Lite JSON; renders live or on Ctrl+Enter. <strong style="color:var(--text)">CONFIG</strong> — visual theme (colours, fonts, axes). <strong style="color:var(--text)">DATA</strong> — upload CSV/JSON, paste, or pick a sample dataset. <strong style="color:var(--text)">+ LAYER</strong> adds a pre-configured mark layer.</div>
+            </div>
+          </div>
+
+          <!-- Preview + console -->
+          <div class="hd-preview-col">
+            <div class="hd-zone hd-preview">
+              <div class="hd-zone-label">CHART PREVIEW</div>
+              <div class="hd-chart-area">
+                <div class="hd-bar" style="height:55%;background:#60a5fa"></div>
+                <div class="hd-bar" style="height:80%;background:#60a5fa"></div>
+                <div class="hd-bar" style="height:38%;background:#f59e0b"></div>
+                <div class="hd-bar" style="height:65%;background:#60a5fa"></div>
+                <div class="hd-bar" style="height:92%;background:#60a5fa"></div>
+              </div>
+              <div class="hd-zone-sep"></div>
+              <div class="hd-zone-text">Live chart output. <strong style="color:var(--text)">FIT</strong> resizes to fill the pane. <strong style="color:var(--text)">+ / −</strong> zooms without touching the spec.</div>
+            </div>
+            <div class="hd-zone hd-console">
+              <div class="hd-zone-label">⚠ CONSOLE</div>
+              <div class="hd-console-msg">WARN Stacking applied even though aggregate is non-summative…</div>
+              <div class="hd-zone-text" style="padding-top:0">Vega-Lite warnings appear here when something in the spec doesn't look right.</div>
+            </div>
+          </div>
+
+        </div><!-- /hd-row-main -->
+
+      </div><!-- /hd-diagram -->
+
+      <div class="help-links-title">USEFUL LINKS</div>
+
+      <a class="help-link" href="https://vega.github.io/vega-lite/docs/" target="_blank" rel="noopener">
+        <span class="help-link-icon">📖</span>
+        <div>
+          <div class="help-link-label">VEGA-LITE DOCUMENTATION</div>
+          <div class="help-link-desc">The complete reference for every property, mark type, encoding channel and transform available in Vega-Lite</div>
+        </div>
+      </a>
+      <a class="help-link" href="https://deneb-viz.github.io/" target="_blank" rel="noopener">
+        <span class="help-link-icon">⭐</span>
+        <div>
+          <div class="help-link-label">DENEB FOR POWER BI</div>
+          <div class="help-link-desc">The Power BI custom visual that renders Vega-Lite charts — use SHARE SPEC to copy your spec straight into Deneb</div>
+        </div>
+      </a>
+      <a class="help-link" href="https://vega.github.io/vega-lite/examples/" target="_blank" rel="noopener">
+        <span class="help-link-icon">🎨</span>
+        <div>
+          <div class="help-link-label">VEGA-LITE EXAMPLE GALLERY</div>
+          <div class="help-link-desc">A large library of ready-made chart specs you can copy, paste into the editor and adapt to your own data</div>
+        </div>
+      </a>
+
+    </div><!-- /help-body -->
+  </div><!-- /help-modal -->
+</div><!-- /help-overlay -->
+
+<!-- ─── PASTE MODAL ─── -->
+<div class="modal-overlay hidden" id="paste-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      PASTE DATA
+      <button class="btn" id="modal-close">✕ CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="fmt-toggle">
+        <button class="fmt-btn active" data-fmt="csv">CSV</button>
+        <button class="fmt-btn" data-fmt="json">JSON</button>
+        <button class="fmt-btn" data-fmt="tsv">TSV</button>
+      </div>
+      <textarea id="paste-area" placeholder="Paste your CSV or JSON array here..."></textarea>
+      <button class="btn btn-primary" id="btn-load-paste">LOAD DATA →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CODE VIEWER MODAL ─── -->
+<div class="modal-overlay hidden" id="code-viewer-modal">
+  <div class="modal-box" style="width:92vw;max-width:1400px;max-height:90vh;height:80vh;">
+    <div class="modal-head">
+      <span id="code-viewer-title">VEGA SPEC</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-primary" id="btn-code-copy">COPY CODE</button>
+        <button class="btn btn-primary hidden" id="btn-code-copy-config">COPY CONFIG</button>
+        <button class="btn" id="btn-code-close">✕ CLOSE</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding:0;flex:1;overflow:hidden;flex-direction:row;">
+      <pre id="code-viewer-pre" style="
+        flex:1;min-width:0;margin:0;padding:15px 17px;overflow:auto;
+        background:var(--bg);color:var(--text);
+        font-family:var(--mono);font-size:13px;line-height:1.65;
+        white-space:pre;tab-size:2;border:none;border-right:1px solid var(--border);
+      "></pre>
+      <div id="code-viewer-preview" style="
+        flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
+        overflow:auto;padding:16px;
+      "></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PRESENTATION OVERLAY ─── -->
+<div id="present-overlay" class="hidden">
+  <div id="present-chart-wrap">
+    <div id="present-chart-inner">
+      <div id="present-chart-a" class="present-chart-layer front"></div>
+      <div id="present-chart-b" class="present-chart-layer behind"></div>
+    </div>
+    <svg id="present-annotate-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs id="ann-defs"></defs>
+      <rect width="100%" height="100%" fill="transparent"/>
+    </svg>
+    <div id="present-annotate-toolbar" class="hidden">
+      <div class="ann-tool active" data-tool="draw" title="Freehand draw">&#9998;</div>
+      <div class="ann-tool" data-tool="arrow" title="Arrow">&#8599;</div>
+      <div class="ann-tool" data-tool="text" title="Text">T</div>
+      <div class="ann-sep"></div>
+      <div class="ann-color active" data-color="#e24b4a" style="background:#e24b4a"></div>
+      <div class="ann-color" data-color="#2563eb" style="background:#2563eb"></div>
+      <div class="ann-color" data-color="#22c55e" style="background:#22c55e"></div>
+      <div class="ann-color" data-color="#f59e0b" style="background:#f59e0b"></div>
+      <div class="ann-color" data-color="#ffffff" style="background:#ffffff;border-color:var(--border2)"></div>
+      <div class="ann-color" data-color="#000000" style="background:#000000"></div>
+      <div class="ann-sep"></div>
+      <select id="ann-size" title="Stroke thickness">
+        <option value="1.5">Thin</option>
+        <option value="2.5" selected>Medium</option>
+        <option value="5">Thick</option>
+        <option value="8">Bold</option>
+      </select>
+      <div class="ann-sep"></div>
+      <div class="ann-tool" id="ann-undo" title="Undo">&#8630;</div>
+      <div class="ann-tool" id="ann-clear" title="Clear all">&#128465;</div>
+    </div>
+  </div>
+  <div id="present-editor">
+    <div id="present-editor-head">
+      <span>STEPS</span>
+      <div style="display:flex;gap:6px;">
+        <button id="present-clear-steps" title="Clear all steps" style="font-size:12px;font-family:var(--mono);letter-spacing:0.04em;">CLEAR</button>
+        <button id="present-editor-close" title="Close editor">✕</button>
+      </div>
+    </div>
+    <div id="present-step-list"></div>
+  </div>
+  <div id="present-code-panel" class="hidden pos-tr">
+    <div id="present-code-head">
+      <span>CHANGES</span>
+      <div id="present-code-settings">
+        <select id="present-code-font" title="Font">
+          <option value="'Cascadia Code',monospace">Cascadia Code</option>
+          <option value="'Fira Code',monospace">Fira Code</option>
+          <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
+          <option value="Consolas,monospace">Consolas</option>
+          <option value="'Courier New',monospace">Courier New</option>
+          <option value="monospace" selected>System Mono</option>
+        </select>
+        <input type="number" id="present-code-size" value="13" min="9" max="24" title="Font size">
+        <button data-pos="tl" title="Top left">↖</button>
+        <button data-pos="tr" class="active" title="Top right">↗</button>
+        <button data-pos="bl" title="Bottom left">↙</button>
+        <button data-pos="br" title="Bottom right">↘</button>
+      </div>
+    </div>
+    <pre id="present-code-body"></pre>
+  </div>
+  <div id="present-controls">
+    <button id="present-edit-btn" title="Reorder or remove steps">STEPS</button>
+    <button id="present-code-toggle" title="Show/hide code changes">CODE</button>
+    <button id="present-annotate-toggle" title="Draw annotations on chart">ANNOTATE</button>
+    <button id="present-prev" title="Previous step">◀</button>
+    <button id="present-play" title="Play / Pause">▶ PLAY</button>
+    <button id="present-next" title="Next step">▶</button>
+    <select id="present-speed" title="Transition speed">
+      <option value="1500">1.5s</option>
+      <option value="2000">2s</option>
+      <option value="3000" selected>3s</option>
+      <option value="5000">5s</option>
+      <option value="8000">8s</option>
+    </select>
+    <div class="present-dots" id="present-dots"></div>
+    <span id="present-step-label"></span>
+    <button id="present-exit" title="Exit presentation">✕ EXIT</button>
+  </div>
+</div>
+
+<script src="vegalite.js"></script>
+</body>
+</html>

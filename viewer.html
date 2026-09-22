@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ferry Tales Studio — Visual Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vega/5.30.0/vega.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.21.0/vega-lite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.26.0/vega-embed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0a0a0b; display: flex; flex-direction: column; }
+    body.light { background: #f0f0f5; }
+    body.light #header { background: #ffffff; border-bottom-color: #d0d0dc; }
+    body.light #header a { color: #b87200; }
+    body.light #title { color: #6e6e88; }
+
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: #111113;
+      border-bottom: 1px solid #222226;
+      flex-shrink: 0;
+    }
+
+    #header a {
+      color: #f59e0b;
+      text-decoration: none;
+      font-family: sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    #header a:hover { opacity: 0.75; }
+
+    #title {
+      font-family: sans-serif;
+      font-size: 0.85rem;
+      color: #7e7e92;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
+    #title:hover { color: #f59e0b; }
+
+    #chart-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    #chart { width: 100%; height: 100%; }
+    #chart-wrap > div { width: 100%; height: 100%; }
+
+    #error {
+      font-family: sans-serif;
+      color: #ef4444;
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <a id="title" href="https://dataferrytales.github.io/studio/vegalite.html" target="_blank" rel="noopener">⬡ FERRY TALES STUDIO — VISUAL VIEWER</a>
+  <a href="https://dataferrytales.github.io/studio/vegalite.html">← Open in Editor</a>
+</div>
+
+<div id="chart-wrap">
+  <div id="chart"></div>
+  <div id="error">Could not load chart. The link may be invalid or corrupted.</div>
+</div>
+
+<script>
+  const CONFIGS = [
+    { id:"arctic", name:"Arctic Blue", cfg:{ background:"#020d18", view:{stroke:"transparent"}, font:"Calibri, sans-serif", axis:{labelColor:"#90b8d4",titleColor:"#90b8d4",gridColor:"#0d1f2d",domainColor:"#1a3a52",tickColor:"#1a3a52",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#90b8d4",titleColor:"#90b8d4",labelFontSize:11,titleFontSize:11}, title:{color:"#e0f0ff",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#00b4d8","#f72585","#48cae4","#90e0ef","#ade8f4","#caf0f8","#0077b6","#7b2d8b","#0096c7","#4cc9f0"]}, mark:{color:"#00b4d8"}, bar:{color:"#00b4d8"}, line:{color:"#00b4d8"}, point:{color:"#00b4d8"}, arc:{color:"#00b4d8"}, rule:{color:"#00b4d8"}, tick:{color:"#00b4d8"}, text:{color:"#90b8d4"} } },
+    { id:"midnight", name:"Midnight", cfg:{ background:"#0a0a0b", view:{stroke:"transparent"}, font:"Verdana, sans-serif", axis:{labelColor:"#9ca3af",titleColor:"#9ca3af",gridColor:"#222226",domainColor:"#2e2e34",tickColor:"#2e2e34",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#9ca3af",titleColor:"#9ca3af",labelFontSize:11,titleFontSize:11}, title:{color:"#e4e4e8",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#f59e0b","#60a5fa","#34d399","#a78bfa","#fb923c","#f87171","#38bdf8","#4ade80","#e879f9","#facc15"]}, mark:{color:"#f59e0b"}, bar:{color:"#f59e0b"}, line:{color:"#f59e0b"}, point:{color:"#f59e0b"}, arc:{color:"#f59e0b"}, rule:{color:"#f59e0b"}, tick:{color:"#f59e0b"}, text:{color:"#9ca3af"} } },
+    { id:"slate", name:"Slate & Coral", cfg:{ background:"#0f172a", view:{stroke:"transparent"}, font:"Gill Sans, Gill Sans MT, sans-serif", axis:{labelColor:"#94a3b8",titleColor:"#94a3b8",gridColor:"#1e293b",domainColor:"#334155",tickColor:"#334155",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#94a3b8",titleColor:"#94a3b8",labelFontSize:11,titleFontSize:11}, title:{color:"#f1f5f9",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#fb7185","#38bdf8","#34d399","#fbbf24","#a78bfa","#f97316","#22d3ee","#4ade80","#e879f9","#facc15"]}, mark:{color:"#fb7185"}, bar:{color:"#fb7185"}, line:{color:"#fb7185"}, point:{color:"#fb7185"}, arc:{color:"#fb7185"}, rule:{color:"#fb7185"}, tick:{color:"#fb7185"}, text:{color:"#94a3b8"} } },
+    { id:"forest", name:"Forest & Gold", cfg:{ background:"#0d1f0d", view:{stroke:"transparent"}, font:"Trebuchet MS, sans-serif", axis:{labelColor:"#86a789",titleColor:"#86a789",gridColor:"#1a2e1a",domainColor:"#2d4a2d",tickColor:"#2d4a2d",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#86a789",titleColor:"#86a789",labelFontSize:11,titleFontSize:11}, title:{color:"#d4edda",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#d4a017","#52b788","#74c69d","#b7e4c7","#f4a261","#e76f51","#2d6a4f","#95d5b2","#ffd166","#06d6a0"]}, mark:{color:"#d4a017"}, bar:{color:"#d4a017"}, line:{color:"#d4a017"}, point:{color:"#d4a017"}, arc:{color:"#d4a017"}, rule:{color:"#d4a017"}, tick:{color:"#d4a017"}, text:{color:"#86a789"} } },
+    { id:"clean-light", name:"Clean Light", cfg:{ background:"#ffffff", view:{stroke:"#e2e2ee"}, font:"Calibri, sans-serif", axis:{labelColor:"#44445a",titleColor:"#44445a",gridColor:"#ebebf5",domainColor:"#c8c8dc",tickColor:"#c8c8dc",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#44445a",titleColor:"#44445a",labelFontSize:11,titleFontSize:11}, title:{color:"#1a1a2e",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#2563eb","#16a34a","#dc2626","#d97706","#7c3aed","#0891b2","#be185d","#65a30d","#ea580c","#0d9488"]}, mark:{color:"#2563eb"}, bar:{color:"#2563eb"}, line:{color:"#2563eb"}, point:{color:"#2563eb"}, arc:{color:"#2563eb"}, rule:{color:"#2563eb"}, tick:{color:"#2563eb"}, text:{color:"#44445a"} } },
+    { id:"warm-sand", name:"Warm Sand", cfg:{ background:"#fdf6ed", view:{stroke:"#e8ddc8"}, font:"Verdana, sans-serif", axis:{labelColor:"#6b5744",titleColor:"#6b5744",gridColor:"#ede4d4",domainColor:"#d4c4aa",tickColor:"#d4c4aa",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#6b5744",titleColor:"#6b5744",labelFontSize:11,titleFontSize:11}, title:{color:"#3b2a1a",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#b45309","#374151","#b91c1c","#047857","#1d4ed8","#7c2d12","#92400e","#065f46","#1e3a8a","#78350f"]}, mark:{color:"#b45309"}, bar:{color:"#b45309"}, line:{color:"#b45309"}, point:{color:"#b45309"}, arc:{color:"#b45309"}, rule:{color:"#b45309"}, tick:{color:"#b45309"}, text:{color:"#6b5744"} } },
+    { id:"soft-rose", name:"Soft Rose", cfg:{ background:"#fff5f7", view:{stroke:"#f0d0d8"}, font:"Trebuchet MS, sans-serif", axis:{labelColor:"#7a3a50",titleColor:"#7a3a50",gridColor:"#fce4ea",domainColor:"#f0b8c8",tickColor:"#f0b8c8",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#7a3a50",titleColor:"#7a3a50",labelFontSize:11,titleFontSize:11}, title:{color:"#4a1028",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#be185d","#7c3aed","#0891b2","#b45309","#16a34a","#dc2626","#6d28d9","#0e7490","#92400e","#065f46"]}, mark:{color:"#be185d"}, bar:{color:"#be185d"}, line:{color:"#be185d"}, point:{color:"#be185d"}, arc:{color:"#be185d"}, rule:{color:"#be185d"}, tick:{color:"#be185d"}, text:{color:"#7a3a50"} } },
+    { id:"slate-light", name:"Slate Light", cfg:{ background:"#f1f5f9", view:{stroke:"#cbd5e1"}, font:"Optima, Candara, sans-serif", axis:{labelColor:"#475569",titleColor:"#475569",gridColor:"#e2e8f0",domainColor:"#cbd5e1",tickColor:"#cbd5e1",labelFontSize:11,titleFontSize:11,titleFontWeight:600}, legend:{labelColor:"#475569",titleColor:"#475569",labelFontSize:11,titleFontSize:11}, title:{color:"#0f172a",fontSize:14,fontWeight:700,anchor:"start",offset:8}, range:{category:["#0284c7","#dc2626","#0d9488","#7c3aed","#d97706","#16a34a","#be185d","#ea580c","#2563eb","#065f46"]}, mark:{color:"#0284c7"}, bar:{color:"#0284c7"}, line:{color:"#0284c7"}, point:{color:"#0284c7"}, arc:{color:"#0284c7"}, rule:{color:"#0284c7"}, tick:{color:"#0284c7"}, text:{color:"#475569"} } }
+  ];
+
+  function loadFromHash() {
+    try {
+      const hash = location.hash;
+      if (!hash.startsWith('#spec=')) throw new Error('No spec in URL');
+
+      // Parse flags from hash — strip &light=1 and &theme=xxx, leaving just the encoded spec
+      const hashStr = hash.slice(6);
+      const lightMatch = hashStr.match(/&light=1/);
+      const themeMatch = hashStr.match(/&theme=([^&]+)/);
+      const themeId    = themeMatch ? themeMatch[1] : null;
+      const encoded    = hashStr.replace(/&light=1/g, '').replace(/&theme=[^&]*/g, '');
+
+      const decoded = LZString.decompressFromEncodedURIComponent(encoded);
+      if (!decoded) throw new Error('Decompression failed');
+
+      const spec = JSON.parse(decoded);
+
+      // Config priority:
+      //   1. Inline config embedded in the spec (new-style share links) — use as-is.
+      //   2. Named theme via &theme= param (legacy share links) — look up and apply.
+      //   3. Neither — drop any stale embedded config and let vega-embed use its default.
+      const hasInlineConfig = !!spec.config;
+      const matchedConfig   = !hasInlineConfig && themeId ? CONFIGS.find(c => c.id === themeId) : null;
+      if (hasInlineConfig) {
+        const bg = spec.config.background || '';
+        document.body.style.background = bg;
+        document.getElementById('chart-wrap').style.background = bg;
+      } else if (matchedConfig) {
+        spec.config = matchedConfig.cfg;
+        document.body.style.background = matchedConfig.cfg.background || '';
+        document.getElementById('chart-wrap').style.background = matchedConfig.cfg.background || '';
+      } else {
+        delete spec.config;
+      }
+
+      // Apply light-mode body class if requested
+      if (lightMatch) document.body.classList.add('light');
+      else document.body.classList.remove('light');
+
+      // Outer-facet compilation workaround (same as the editor's renderSpec).
+      // Vega-Lite 5.21 still trips when a layered spec with shared encoding
+      // or transforms sits inside the outer facet operator. Push shared
+      // encoding down into each layer, lift transforms to the outer root,
+      // and inject the facet field into joinaggregate groupby so Highlight
+      // Max/Min is computed per facet partition rather than globally.
+      if (spec.facet && spec.spec) {
+        if (spec.spec.layer && spec.spec.encoding) {
+          const shared = spec.spec.encoding;
+          spec.spec.layer.forEach(l => { l.encoding = { ...shared, ...(l.encoding || {}) }; });
+          delete spec.spec.encoding;
+        }
+        if (Array.isArray(spec.spec.transform)) {
+          const facetField = spec.facet.field;
+          const lifted = spec.spec.transform.map(t => {
+            if (!t.joinaggregate || !facetField) return t;
+            const gb = Array.isArray(t.groupby) ? t.groupby.slice() : [];
+            if (!gb.includes(facetField)) gb.push(facetField);
+            return Object.assign({}, t, { groupby: gb });
+          });
+          spec.transform = (spec.transform || []).concat(lifted);
+          delete spec.spec.transform;
+        }
+      }
+      // Flat spec with encoding.facet also benefits from facet-aware HL.
+      const flatFacetField = spec.encoding && spec.encoding.facet && spec.encoding.facet.field;
+      if (flatFacetField && Array.isArray(spec.transform)) {
+        spec.transform = spec.transform.map(t => {
+          if (!t.joinaggregate) return t;
+          const gb = Array.isArray(t.groupby) ? t.groupby.slice() : [];
+          if (!gb.includes(flatFacetField)) gb.push(flatFacetField);
+          return Object.assign({}, t, { groupby: gb });
+        });
+      }
+
+      // Use the spec's own dimensions if provided; otherwise fill the viewer.
+      // For outer-facet form, width/height belong inside spec.spec (per facet cell).
+      const wrap = document.getElementById('chart-wrap');
+      const availW = wrap.clientWidth  - 48;
+      const availH = wrap.clientHeight - 48;
+      const dimTarget = (spec.facet && spec.spec) ? spec.spec : spec;
+      if (typeof dimTarget.width  !== 'number') dimTarget.width  = Math.round(availW * 0.75);
+      if (typeof dimTarget.height !== 'number') dimTarget.height = Math.round(availH * 0.75);
+
+      // Suppress vega-embed's built-in theme when we provide our own config
+      const embedTheme = (hasInlineConfig || matchedConfig) ? null : (lightMatch ? 'default' : 'dark');
+
+      vegaEmbed('#chart', spec, {
+        renderer: 'svg',
+        actions: false,
+        theme: embedTheme
+      }).catch(e => { throw e; });
+
+    } catch (e) {
+      document.getElementById('chart').innerHTML = '';
+      document.getElementById('chart').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+    }
+  }
+
+  loadFromHash();
+  window.addEventListener('hashchange', () => {
+    document.getElementById('chart').style.display = '';
+    document.getElementById('error').style.display = 'none';
+    loadFromHash();
+  });
+</script>
+
+</body>
+</html>
