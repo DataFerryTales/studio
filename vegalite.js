@@ -1349,6 +1349,7 @@ function _buildExportedSpec() {
   if (Object.keys(mapping).length) spec = _remapSpec(spec, mapping);
   const dataName = _exportTarget === 'pbi' ? 'dataset' : 'databricks_query';
   _setDataName(spec, dataName);
+  if (_exportTarget === 'dbx') spec.config = _exportParsed.config;
   return spec;
 }
 
@@ -1381,6 +1382,9 @@ function openExportModal(target) {
     container.appendChild(row);
     _exportFields.push({ name, inputEl: input });
   });
+
+  const cfgBtn = document.getElementById('btn-export-copy-config');
+  cfgBtn.classList.toggle('hidden', target === 'dbx');
 
   document.getElementById('export-modal').classList.remove('hidden');
 }
