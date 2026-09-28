@@ -1318,6 +1318,8 @@ function _remapSpec(spec, mapping) {
       out[k] = expr;
     } else if (k === 'as' && typeof v === 'string' && mapping[v]) {
       out[k] = mapping[v];
+    } else if (k === 'groupby' && Array.isArray(v)) {
+      out[k] = v.map(g => (typeof g === 'string' && mapping[g]) ? mapping[g] : g);
     } else {
       out[k] = _remapSpec(v, mapping);
     }
