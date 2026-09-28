@@ -390,6 +390,118 @@ const TEMPLATES = [
       ]
     }
   },
+  { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
+    spec: { "$schema":SCHEMA, "data":{"url":DS+"gapminder.json"},
+      "params":[
+        {"name":"topH","value":178},
+        {"name":"bandH","value":22},
+        {"name":"bandGap","value":4},
+        {"name":"chartGap","value":10}
+      ],
+      "spacing":10,
+      "vconcat":[
+        {
+          "title":{"text":"Global Metrics","fontSize":13,"fontWeight":300,"anchor":"start"},
+          "height":178,
+          "transform":[
+            {"aggregate":[
+              {"op":"sum","field":"pop","as":"pop"},
+              {"op":"mean","field":"life_expect","as":"life_expect"},
+              {"op":"mean","field":"fertility","as":"fertility"}
+            ],"groupby":["year"]},
+            {"joinaggregate":[{"op":"max","field":"year","as":"_max_year"}]}
+          ],
+          "resolve":{"scale":{"y":"independent"}},
+          "layer":[
+            {
+              "transform":[
+                {"filter":"datum.year >= datum._max_year - 5"},
+                {"calculate":"datum.year === datum._max_year ? 'curr' : 'prev'","as":"_period"},
+                {"fold":["pop","life_expect","fertility"],"as":["_metric","_v"]},
+                {"pivot":"_period","value":"_v","groupby":["_metric"],"op":"sum"},
+                {"calculate":"indexof(['pop','life_expect','fertility'], datum._metric)","as":"_i"},
+                {"calculate":"['Population','Life Expectancy','Fertility'][datum._i]","as":"_name"},
+                {"calculate":"['#E9E2F7','#F4E5B2','#DDEBDF'][datum._i]","as":"_bg"},
+                {"calculate":"['#4A2C74','#8A5A00','#0F6A5B'][datum._i]","as":"_fg"},
+                {"calculate":"datum._i * (bandH + bandGap)","as":"_y0"},
+                {"calculate":"datum._y0 + bandH / 2","as":"_yc"},
+                {"calculate":"datum._y0 + bandH","as":"_y1"},
+                {"calculate":"datum.prev > 0 ? (datum.curr - datum.prev) / datum.prev : null","as":"_delta"},
+                {"calculate":"datum._metric === 'pop' ? format(datum.curr, '.3s') : datum._metric === 'life_expect' ? format(datum.curr, '.1f') + ' yrs' : format(datum.curr, '.2f')","as":"_value_label"},
+                {"calculate":"isValid(datum._delta) ? (datum._delta >= 0 ? '▲ ' : '▼ ') + format(abs(datum._delta), '.1%') + ' vs prev' : 'N/A'","as":"_delta_label"}
+              ],
+              "encoding":{"y":{"field":"_yc","type":"quantitative","scale":null}},
+              "layer":[
+                {
+                  "mark":{"type":"rect","cornerRadius":4},
+                  "encoding":{
+                    "x":{"value":0},
+                    "x2":{"value":{"expr":"width"}},
+                    "y":{"field":"_y0","type":"quantitative","scale":null},
+                    "y2":{"field":"_y1"},
+                    "color":{"field":"_bg","type":"nominal","scale":null}
+                  }
+                },
+                {
+                  "mark":{"type":"text","fontSize":11,"fontWeight":300,"align":"left","baseline":"middle","x":10},
+                  "encoding":{
+                    "text":{"field":"_name"},
+                    "color":{"field":"_fg","type":"nominal","scale":null}
+                  }
+                },
+                {
+                  "mark":{"type":"text","fontSize":14,"fontWeight":400,"align":"right","baseline":"middle","x":{"expr":"width-84"}},
+                  "encoding":{"text":{"field":"_value_label"}}
+                },
+                {
+                  "mark":{"type":"text","fontSize":10,"fontWeight":300,"align":"right","baseline":"middle","x":{"expr":"width-8"}},
+                  "encoding":{
+                    "text":{"field":"_delta_label"},
+                    "color":{"value":"#8A8A8A"}
+                  }
+                }
+              ]
+            },
+            {
+              "mark":{"type":"area","interpolate":"monotone","fillOpacity":0.12,"line":{"strokeWidth":1.5},"clip":true},
+              "encoding":{
+                "x":{"field":"year","type":"ordinal","axis":{"title":null,"grid":false,"labelAngle":0}},
+                "y":{"field":"life_expect","type":"quantitative","axis":null,
+                  "scale":{"range":[{"expr":"topH"},{"expr":"3 * (bandH + bandGap) + chartGap"}]}
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title":{"text":"Top Countries by Population","fontSize":12,"fontWeight":300,"anchor":"start"},
+          "height":90,
+          "transform":[
+            {"joinaggregate":[{"op":"max","field":"year","as":"_max_year"}]},
+            {"filter":"datum.year === datum._max_year"},
+            {"aggregate":[{"op":"sum","field":"pop","as":"pop"}],"groupby":["country"]},
+            {"window":[{"op":"row_number","as":"_rank"}],"sort":[{"field":"pop","order":"descending"}]},
+            {"filter":"datum._rank <= 3"}
+          ],
+          "encoding":{
+            "y":{"field":"country","type":"nominal","sort":{"field":"pop","order":"descending"},"axis":null,"scale":{"paddingInner":0.7,"paddingOuter":0.6}},
+            "x":{"field":"pop","type":"quantitative","axis":null}
+          },
+          "layer":[
+            {"mark":{"type":"bar","height":8,"cornerRadiusEnd":3}},
+            {
+              "mark":{"type":"text","align":"left","baseline":"bottom","x":0,"dy":-7,"fontSize":10,"fontWeight":300,"color":"#666","limit":{"expr":"width-40"}},
+              "encoding":{"text":{"field":"country"},"x":null}
+            },
+            {
+              "mark":{"type":"text","align":"left","dx":4,"fontSize":10},
+              "encoding":{"text":{"field":"pop","type":"quantitative","format":".3s"}}
+            }
+          ]
+        }
+      ]
+    }
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────
