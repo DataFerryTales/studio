@@ -393,6 +393,7 @@ const TEMPLATES = [
   { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
     spec: { "$schema":SCHEMA, "data":{"url":DS+"gapminder.json"},
       "params":[
+        {"name":"topH","value":200},
         {"name":"bandH","value":25},
         {"name":"bandGap","value":4},
         {"name":"chartGap","value":20}
@@ -466,7 +467,7 @@ const TEMPLATES = [
               "encoding":{
                 "x":{"field":"year","type":"ordinal","axis":{"title":null,"grid":false,"labelAngle":0}},
                 "y":{"field":"life_expect","type":"quantitative","axis":null,
-                  "scale":{"range":[{"expr":"height"},{"expr":"3 * (bandH + bandGap) + chartGap"}]}
+                  "scale":{"range":[{"expr":"topH"},{"expr":"3 * (bandH + bandGap) + chartGap"}]}
                 }
               }
             }
