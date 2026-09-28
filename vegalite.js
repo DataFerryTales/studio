@@ -1349,7 +1349,19 @@ function _buildExportedSpec() {
   if (Object.keys(mapping).length) spec = _remapSpec(spec, mapping);
   const dataName = _exportTarget === 'pbi' ? 'dataset' : 'databricks_query';
   _setDataName(spec, dataName);
-  if (_exportTarget === 'dbx') spec.config = _exportParsed.config;
+  if (_exportTarget === 'dbx') {
+    spec.config = _exportParsed.config;
+    const hasContainerIssue = spec.vconcat || spec.hconcat || spec.concat
+      || (spec.width && typeof spec.width === 'object')
+      || (spec.height && typeof spec.height === 'object')
+      || spec.facet || spec.encoding?.facet;
+    if (!hasContainerIssue) {
+      spec.width = 'container';
+      spec.height = 'container';
+      if (!spec.config) spec.config = {};
+      spec.config.autosize = { type: 'fit', contains: 'padding' };
+    }
+  }
   return spec;
 }
 
@@ -1385,6 +1397,23 @@ function openExportModal(target) {
 
   const cfgBtn = document.getElementById('btn-export-copy-config');
   cfgBtn.classList.toggle('hidden', target === 'dbx');
+
+  const warnEl = document.getElementById('export-warning');
+  if (target === 'dbx') {
+    const spec = _exportParsed.spec;
+    const hasContainerIssue = spec.vconcat || spec.hconcat || spec.concat
+      || (spec.width && typeof spec.width === 'object')
+      || (spec.height && typeof spec.height === 'object')
+      || spec.facet || spec.encoding?.facet;
+    if (hasContainerIssue) {
+      warnEl.textContent = '⚠ This spec uses multi-view or step-based sizing, so "width/height: container" cannot be applied automatically. You may need to set container sizing manually.';
+      warnEl.classList.remove('hidden');
+    } else {
+      warnEl.classList.add('hidden');
+    }
+  } else {
+    warnEl.classList.add('hidden');
+  }
 
   document.getElementById('export-modal').classList.remove('hidden');
 }
