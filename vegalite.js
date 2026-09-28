@@ -1281,6 +1281,14 @@ function _extractFields(obj, fields) {
   for (const [k, v] of Object.entries(obj)) {
     if (k === 'field' && typeof v === 'string' && !v.startsWith('_')) fields.add(v);
     if (k === 'field' && v && typeof v === 'object' && v.repeat) continue;
+    if ((k === 'filter' || k === 'calculate' || k === 'expr') && typeof v === 'string') {
+      const re = /datum\.([A-Za-z_]\w*)|datum\['([^']+)'\]|datum\["([^"]+)"\]/g;
+      let m;
+      while ((m = re.exec(v)) !== null) {
+        const f = m[1] || m[2] || m[3];
+        if (f && !f.startsWith('_')) fields.add(f);
+      }
+    }
     _extractFields(v, fields);
   }
 }
@@ -1401,18 +1409,24 @@ function openExportModal(target) {
   cfgBtn.classList.toggle('hidden', target === 'dbx');
 
   const warnEl = document.getElementById('export-warning');
+  const warnings = [];
+  const spec = _exportParsed.spec;
   if (target === 'dbx') {
-    const spec = _exportParsed.spec;
     const hasContainerIssue = spec.vconcat || spec.hconcat || spec.concat
       || (spec.width && typeof spec.width === 'object')
       || (spec.height && typeof spec.height === 'object')
       || spec.facet || spec.encoding?.facet;
     if (hasContainerIssue) {
-      warnEl.textContent = '⚠ This spec uses multi-view or step-based sizing, so "width/height: container" cannot be applied automatically. You may need to set container sizing manually.';
-      warnEl.classList.remove('hidden');
-    } else {
-      warnEl.classList.add('hidden');
+      warnings.push('⚠ This spec uses multi-view or step-based sizing, so "width/height: container" cannot be applied automatically. You may need to set container sizing manually.');
     }
+  }
+  const hasFilter = JSON.stringify(spec).includes('"filter"');
+  if (hasFilter) {
+    warnings.push('⚠ This spec contains filters with hardcoded values from the sample data. Check that filter values match your target dataset.');
+  }
+  if (warnings.length) {
+    warnEl.innerHTML = warnings.join('<br><br>');
+    warnEl.classList.remove('hidden');
   } else {
     warnEl.classList.add('hidden');
   }
