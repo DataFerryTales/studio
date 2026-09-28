@@ -1346,6 +1346,7 @@ function _buildExportedSpec() {
   let spec = JSON.parse(JSON.stringify(_exportParsed.spec));
   delete spec.$schema;
   delete spec.config;
+  _removeHlFromSpec(spec);
   if (Object.keys(mapping).length) spec = _remapSpec(spec, mapping);
   const dataName = _exportTarget === 'pbi' ? 'dataset' : 'databricks_query';
   _setDataName(spec, dataName);
