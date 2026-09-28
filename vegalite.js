@@ -57,12 +57,6 @@ const TEMPLATES = [
       }
     }
   },
-  { id:"multiline", name:"MULTI-LINE", icon:"≈≈≈",
-    spec: { "$schema":SCHEMA, "title":"Multi-Series Line", "data":{"url":DS+"stocks.csv"},
-      "mark":"line",
-      "encoding":{ "x":{"field":"date","type":"temporal"}, "y":{"field":"price","type":"quantitative"}, "color":{"field":"symbol","type":"nominal"} }
-    }
-  },
   { id:"scatter", name:"SCATTER", icon:"∴∴∴",
     spec: { "$schema":SCHEMA, "title":"Scatter Plot", "data":{"url":DS+"cars.json"},
       "mark":{"type":"point","filled":true,"size":60,"opacity":0.75},
