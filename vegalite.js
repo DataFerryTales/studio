@@ -402,7 +402,7 @@ const TEMPLATES = [
       "vconcat":[
         {
           "title":{"text":"Global Metrics","fontSize":13,"fontWeight":300,"anchor":"start"},
-          "height":178,
+          "width":400, "height":178,
           "transform":[
             {"aggregate":[
               {"op":"sum","field":"pop","as":"pop"},
@@ -463,7 +463,7 @@ const TEMPLATES = [
               ]
             },
             {
-              "mark":{"type":"area","interpolate":"monotone","fillOpacity":0.12,"line":{"strokeWidth":1.5},"clip":true},
+              "mark":{"type":"area","interpolate":"monotone","color":"#FF6F00","fillOpacity":0.12,"line":{"color":"#FF6F00","strokeWidth":1.5},"clip":true},
               "encoding":{
                 "x":{"field":"year","type":"ordinal","axis":{"title":null,"grid":false,"labelAngle":0}},
                 "y":{"field":"life_expect","type":"quantitative","axis":null,
@@ -475,7 +475,7 @@ const TEMPLATES = [
         },
         {
           "title":{"text":"Top Countries by Population","fontSize":12,"fontWeight":300,"anchor":"start"},
-          "height":90,
+          "width":400, "height":90,
           "transform":[
             {"joinaggregate":[{"op":"max","field":"year","as":"_max_year"}]},
             {"filter":"datum.year === datum._max_year"},
@@ -488,7 +488,7 @@ const TEMPLATES = [
             "x":{"field":"pop","type":"quantitative","axis":null}
           },
           "layer":[
-            {"mark":{"type":"bar","height":8,"cornerRadiusEnd":3}},
+            {"mark":{"type":"bar","height":8,"cornerRadiusEnd":3,"color":"#FF6F00"}},
             {
               "mark":{"type":"text","align":"left","baseline":"bottom","x":0,"dy":-7,"fontSize":10,"fontWeight":300,"color":"#666","limit":{"expr":"width-40"}},
               "encoding":{"text":{"field":"country"},"x":null}
