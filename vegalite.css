@@ -394,7 +394,7 @@ body.light-mode .cm-patch-highlight-wrap {
 .share-menu {
   display: none; position: absolute; top: calc(100% + 4px); right: 0; z-index: 300;
   background: var(--surface); border: 1px solid var(--border2); border-radius: 4px;
-  min-width: 200px; box-shadow: 0 6px 18px rgba(0,0,0,0.3); overflow: hidden;
+  width: 280px; box-shadow: 0 6px 18px rgba(0,0,0,0.3); overflow: hidden;
 }
 .share-menu.open { display: block; }
 .share-opt {
@@ -435,6 +435,9 @@ select {
   font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent);
 }
 .modal-body { padding: 15px 17px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: hidden; }
+
+#export-fields input:focus { border-color: var(--accent); }
+#export-fields input::placeholder { color: var(--muted); opacity: 0.5; }
 
 .fmt-toggle { display: flex; gap: 5px; }
 .fmt-btn {

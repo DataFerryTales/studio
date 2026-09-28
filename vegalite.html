@@ -55,14 +55,12 @@
     <div class="share-wrap">
       <button class="btn" id="btn-share-options" title="Share and export options">⬡ SHARE ▾</button>
       <div class="share-menu" id="share-menu">
-        <button class="share-opt" id="sopt-spec">SHARE SPEC<span class="share-opt-desc">Copy full spec JSON to clipboard</span></button>
         <button class="share-opt" id="sopt-visual">SHARE VISUAL<span class="share-opt-desc">Copy link to your datavis</span></button>
         <button class="share-opt" id="sopt-copy-img">COPY IMAGE<span class="share-opt-desc">Copy chart as PNG to clipboard</span></button>
-        <button class="share-opt" id="sopt-save-png">SAVE AS PNG<span class="share-opt-desc">Download chart as PNG file</span></button>
         <button class="share-opt" id="sopt-save-svg">SAVE AS SVG<span class="share-opt-desc">Download chart as scalable vector</span></button>
         <button class="share-opt" id="sopt-vega-editor">OPEN IN VEGA EDITOR<span class="share-opt-desc">Open spec in the online Vega editor</span></button>
-        <button class="share-opt" id="sopt-view-vega">VIEW AS VEGA<span class="share-opt-desc">Compile to full Vega spec</span></button>
-        <button class="share-opt" id="sopt-view-deneb">VIEW AS DENEB<span class="share-opt-desc">Format spec for Power BI Deneb</span></button>
+        <button class="share-opt" id="sopt-export-pbi">EXPORT TO POWER BI<span class="share-opt-desc">Remap fields and export for Deneb</span></button>
+        <button class="share-opt" id="sopt-export-dbx">EXPORT TO DATABRICKS<span class="share-opt-desc">Remap fields and export for Databricks</span></button>
       </div>
     </div>
     <button class="btn" id="btn-present" title="Play captured presentation">▶ PRESENT<span class="capture-badge hidden" id="capture-count"></span></button>
@@ -779,6 +777,26 @@
       </div>
       <textarea id="paste-area" placeholder="Paste your CSV or JSON array here..."></textarea>
       <button class="btn btn-primary" id="btn-load-paste">LOAD DATA →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── EXPORT / REMAP MODAL ─── -->
+<div class="modal-overlay hidden" id="export-modal">
+  <div class="modal-box" style="width:520px;max-height:85vh;">
+    <div class="modal-head">
+      <span id="export-modal-title">EXPORT</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-primary" id="btn-export-copy-spec">COPY SPEC</button>
+        <button class="btn btn-primary" id="btn-export-copy-config">COPY CONFIG</button>
+        <button class="btn" id="btn-export-close">✕ CLOSE</button>
+      </div>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;">
+      <div style="font-size:12px;color:var(--muted);letter-spacing:0.04em;line-height:1.5;">
+        Remap fields to match your data source. Leave a field blank to keep its original name.
+      </div>
+      <div id="export-fields" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
   </div>
 </div>

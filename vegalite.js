@@ -1270,6 +1270,144 @@ function viewAsDeneb() {
   showCodeViewer('DENEB SPEC', JSON.stringify(denebSpec, null, 2), renderSpec, 'vega-lite', configJson);
 }
 
+// ─── EXPORT WITH FIELD REMAPPING ──────────────────────────────
+let _exportTarget = null;   // 'pbi' or 'dbx'
+let _exportFields = [];     // [{name, inputEl}]
+let _exportParsed = null;   // {spec, config}
+
+function _extractFields(obj, fields) {
+  if (!obj || typeof obj !== 'object') return;
+  if (Array.isArray(obj)) { obj.forEach(v => _extractFields(v, fields)); return; }
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === 'field' && typeof v === 'string' && !v.startsWith('_')) fields.add(v);
+    if (k === 'field' && v && typeof v === 'object' && v.repeat) continue;
+    _extractFields(v, fields);
+  }
+}
+
+function _remapSpec(spec, mapping) {
+  if (!spec || typeof spec !== 'object') return spec;
+  if (Array.isArray(spec)) return spec.map(v => _remapSpec(v, mapping));
+  const out = {};
+  for (const [k, v] of Object.entries(spec)) {
+    if (k === 'field' && typeof v === 'string' && mapping[v]) {
+      out[k] = mapping[v];
+    } else if (k === 'calculate' && typeof v === 'string') {
+      let expr = v;
+      for (const [from, to] of Object.entries(mapping)) {
+        expr = expr.replaceAll('datum.' + from, 'datum.' + to);
+        expr = expr.replaceAll("datum['" + from + "']", "datum['" + to + "']");
+        expr = expr.replaceAll('datum["' + from + '"]', 'datum["' + to + '"]');
+      }
+      out[k] = expr;
+    } else if (k === 'filter' && typeof v === 'string') {
+      let expr = v;
+      for (const [from, to] of Object.entries(mapping)) {
+        expr = expr.replaceAll('datum.' + from, 'datum.' + to);
+        expr = expr.replaceAll("datum['" + from + "']", "datum['" + to + "']");
+        expr = expr.replaceAll('datum["' + from + '"]', 'datum["' + to + '"]');
+      }
+      out[k] = expr;
+    } else if (k === 'expr' && typeof v === 'string') {
+      let expr = v;
+      for (const [from, to] of Object.entries(mapping)) {
+        expr = expr.replaceAll('datum.' + from, 'datum.' + to);
+        expr = expr.replaceAll("datum['" + from + "']", "datum['" + to + "']");
+        expr = expr.replaceAll('datum["' + from + '"]', 'datum["' + to + '"]');
+      }
+      out[k] = expr;
+    } else if (k === 'as' && typeof v === 'string' && mapping[v]) {
+      out[k] = mapping[v];
+    } else {
+      out[k] = _remapSpec(v, mapping);
+    }
+  }
+  return out;
+}
+
+function _setDataName(spec, name) {
+  if (spec.data && (spec.data.url || spec.data.values || spec.data.name)) {
+    spec.data = { name };
+  }
+  if (Array.isArray(spec.layer)) spec.layer.forEach(l => {
+    if (l.data && (l.data.url || l.data.values)) l.data = { name };
+  });
+  if (Array.isArray(spec.vconcat)) spec.vconcat.forEach(v => _setDataName(v, name));
+  if (Array.isArray(spec.hconcat)) spec.hconcat.forEach(v => _setDataName(v, name));
+  if (spec.spec) _setDataName(spec.spec, name);
+}
+
+function _buildExportedSpec() {
+  const mapping = {};
+  _exportFields.forEach(f => {
+    const newName = f.inputEl.value.trim();
+    if (newName && newName !== f.name) mapping[f.name] = newName;
+  });
+  let spec = JSON.parse(JSON.stringify(_exportParsed.spec));
+  delete spec.$schema;
+  delete spec.config;
+  if (Object.keys(mapping).length) spec = _remapSpec(spec, mapping);
+  const dataName = _exportTarget === 'pbi' ? 'dataset' : 'databricks_query';
+  _setDataName(spec, dataName);
+  return spec;
+}
+
+function openExportModal(target) {
+  _exportTarget = target;
+  _exportParsed = _getSpecAndConfig();
+  if (!_exportParsed) return;
+
+  const title = target === 'pbi' ? 'EXPORT TO POWER BI' : 'EXPORT TO DATABRICKS';
+  document.getElementById('export-modal-title').textContent = title;
+
+  const fields = new Set();
+  _extractFields(_exportParsed.spec, fields);
+  _exportFields = [];
+
+  const container = document.getElementById('export-fields');
+  container.innerHTML = '';
+  [...fields].sort().forEach(name => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    const label = document.createElement('span');
+    label.style.cssText = 'flex:1;font-size:12px;font-family:var(--mono);color:var(--text);letter-spacing:0.02em;';
+    label.textContent = name;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = name;
+    input.style.cssText = 'flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);border-radius:3px;padding:5px 8px;font-size:12px;font-family:var(--mono);outline:none;';
+    row.appendChild(label);
+    row.appendChild(input);
+    container.appendChild(row);
+    _exportFields.push({ name, inputEl: input });
+  });
+
+  document.getElementById('export-modal').classList.remove('hidden');
+}
+
+document.getElementById('btn-export-copy-spec').onclick = () => {
+  const spec = _buildExportedSpec();
+  navigator.clipboard.writeText(JSON.stringify(spec, null, 2))
+    .then(() => showShareFeedback('✓ SPEC COPIED!'))
+    .catch(() => { prompt('Copy spec:', JSON.stringify(spec, null, 2)); });
+};
+
+document.getElementById('btn-export-copy-config').onclick = () => {
+  if (!_exportParsed) return;
+  const configJson = JSON.stringify(_exportParsed.config, null, 2);
+  navigator.clipboard.writeText(configJson)
+    .then(() => showShareFeedback('✓ CONFIG COPIED!'))
+    .catch(() => { prompt('Copy config:', configJson); });
+};
+
+document.getElementById('btn-export-close').onclick = () => {
+  document.getElementById('export-modal').classList.add('hidden');
+};
+
+document.getElementById('export-modal').addEventListener('click', e => {
+  if (e.target.id === 'export-modal') document.getElementById('export-modal').classList.add('hidden');
+});
+
 // ─── PRESENTATION MODE ────────────────────────────────────────
 const _present = {
   steps: [],
@@ -1863,14 +2001,12 @@ function bindEvents() {
     document.getElementById('share-menu').classList.remove('open');
     fn();
   });
-  _so('sopt-spec')(shareSpec);
   _so('sopt-visual')(shareVisual);
   _so('sopt-copy-img')(copyChartImage);
-  _so('sopt-save-png')(savePng);
   _so('sopt-save-svg')(saveSvg);
   _so('sopt-vega-editor')(openInVegaEditor);
-  _so('sopt-view-vega')(viewAsVega);
-  _so('sopt-view-deneb')(viewAsDeneb);
+  _so('sopt-export-pbi')(() => openExportModal('pbi'));
+  _so('sopt-export-dbx')(() => openExportModal('dbx'));
 
   // Code viewer modal
   document.getElementById('btn-code-close').onclick = () => document.getElementById('code-viewer-modal').classList.add('hidden');
