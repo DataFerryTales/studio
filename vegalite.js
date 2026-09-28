@@ -393,16 +393,15 @@ const TEMPLATES = [
   { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
     spec: { "$schema":SCHEMA, "data":{"url":DS+"gapminder.json"},
       "params":[
-        {"name":"topH","value":178},
-        {"name":"bandH","value":22},
+        {"name":"bandH","value":25},
         {"name":"bandGap","value":4},
-        {"name":"chartGap","value":10}
+        {"name":"chartGap","value":20}
       ],
-      "spacing":10,
+      "spacing":30,
       "vconcat":[
         {
           "title":{"text":"Global Metrics","fontSize":13,"fontWeight":300,"anchor":"start"},
-          "width":400, "height":178,
+          "width":400, "height":200,
           "transform":[
             {"aggregate":[
               {"op":"sum","field":"pop","as":"pop"},
@@ -427,7 +426,7 @@ const TEMPLATES = [
                 {"calculate":"datum._y0 + bandH / 2","as":"_yc"},
                 {"calculate":"datum._y0 + bandH","as":"_y1"},
                 {"calculate":"datum.prev > 0 ? (datum.curr - datum.prev) / datum.prev : null","as":"_delta"},
-                {"calculate":"datum._metric === 'pop' ? format(datum.curr, '.3s') : datum._metric === 'life_expect' ? format(datum.curr, '.1f') + ' yrs' : format(datum.curr, '.2f')","as":"_value_label"},
+                {"calculate":"format(datum.curr, ['.3s','.1f','.2f'][datum._i]) + ['', ' yrs', ''][datum._i]","as":"_value_label"},
                 {"calculate":"isValid(datum._delta) ? (datum._delta >= 0 ? '▲ ' : '▼ ') + format(abs(datum._delta), '.1%') + ' vs prev' : 'N/A'","as":"_delta_label"}
               ],
               "encoding":{"y":{"field":"_yc","type":"quantitative","scale":null}},
@@ -450,7 +449,7 @@ const TEMPLATES = [
                   }
                 },
                 {
-                  "mark":{"type":"text","fontSize":14,"fontWeight":400,"align":"right","baseline":"middle","x":{"expr":"width-84"}},
+                  "mark":{"type":"text","fontSize":14,"fontWeight":400,"align":"right","baseline":"middle","x":{"expr":"width-100"}},
                   "encoding":{"text":{"field":"_value_label"}}
                 },
                 {
@@ -467,7 +466,7 @@ const TEMPLATES = [
               "encoding":{
                 "x":{"field":"year","type":"ordinal","axis":{"title":null,"grid":false,"labelAngle":0}},
                 "y":{"field":"life_expect","type":"quantitative","axis":null,
-                  "scale":{"range":[{"expr":"topH"},{"expr":"3 * (bandH + bandGap) + chartGap"}]}
+                  "scale":{"range":[{"expr":"height"},{"expr":"3 * (bandH + bandGap) + chartGap"}]}
                 }
               }
             }
