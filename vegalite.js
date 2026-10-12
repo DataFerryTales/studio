@@ -2051,8 +2051,9 @@ async function _presentExportVideo() {
     const ctx = canvas.getContext('2d');
     ctx.scale(cw / w, ch / h);
 
-    const fps = 1;
-    const frameDurationUs = 1_000_000 / fps;
+    const stepDurationMs = _present.interval || 3000;
+    const frameDurationUs = stepDurationMs * 1000;
+    const fps = 1000 / stepDurationMs;
 
     const candidates = [
       { enc: 'avc1.640028', mux: 'avc' },
@@ -2063,7 +2064,7 @@ async function _presentExportVideo() {
     ];
     let pickedConfig = null, muxCodec = null;
     for (const c of candidates) {
-      const cfg = { codec: c.enc, width: cw, height: ch, bitrate: 8_000_000, framerate: fps };
+      const cfg = { codec: c.enc, width: cw, height: ch, bitrate: 8_000_000 };
       if (c.hw) cfg.hardwareAcceleration = c.hw;
       const s = await VideoEncoder.isConfigSupported(cfg);
       if (s.supported) { pickedConfig = s.config; muxCodec = c.mux; break; }
@@ -2072,7 +2073,7 @@ async function _presentExportVideo() {
 
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: muxCodec, width: cw, height: ch },
+      video: { codec: muxCodec, width: cw, height: ch, frameRate: fps },
       fastStart: 'in-memory',
       firstTimestampBehavior: 'offset'
     });
