@@ -3939,7 +3939,7 @@ function rebuildAxisSection(spec, axis) {
   const fwCtrl = document.createElement('div'); fwCtrl.className = 'prop-ctrl';
   const fwSel  = document.createElement('select');
   const curFw  = aO.labelFontWeight != null ? String(aO.labelFontWeight) : '';
-  [['', 'Auto'], ['100', 'Thin'], ['300', 'Light'], ['400', 'Normal'], ['600', 'Semi-bold'], ['700', 'Bold']].forEach(([val, lbl]) => {
+  [['', 'Auto'], ['400', 'Normal'], ['600', 'Semi-bold'], ['800', 'Bold']].forEach(([val, lbl]) => {
     const o = document.createElement('option'); o.value = val; o.textContent = lbl;
     if (val === curFw) o.selected = true;
     fwSel.appendChild(o);
