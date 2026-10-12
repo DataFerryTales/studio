@@ -2053,29 +2053,36 @@ async function _presentExportVideo() {
 
     const fps = 1;
     const frameDurationUs = 1_000_000 / fps;
+
+    const candidates = [
+      { enc: 'avc1.640028', mux: 'avc' },
+      { enc: 'avc1.42001f', mux: 'avc' },
+      { enc: 'avc1.42001f', mux: 'avc', hw: 'prefer-software' },
+      { enc: 'vp09.00.10.08', mux: 'vp9' },
+      { enc: 'av01.0.01M.08', mux: 'av1' }
+    ];
+    let pickedConfig = null, muxCodec = null;
+    for (const c of candidates) {
+      const cfg = { codec: c.enc, width: cw, height: ch, bitrate: 8_000_000, framerate: fps };
+      if (c.hw) cfg.hardwareAcceleration = c.hw;
+      const s = await VideoEncoder.isConfigSupported(cfg);
+      if (s.supported) { pickedConfig = s.config; muxCodec = c.mux; break; }
+    }
+    if (!pickedConfig) throw new Error('No supported video codec found in this browser');
+
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: 'avc', width: cw, height: ch },
+      video: { codec: muxCodec, width: cw, height: ch },
       fastStart: 'in-memory',
       firstTimestampBehavior: 'offset'
     });
-
-    const encConfig = {
-      codec: 'avc1.42001f',
-      width: cw, height: ch,
-      bitrate: 8_000_000,
-      framerate: fps,
-      hardwareAcceleration: 'prefer-software'
-    };
-    const support = await VideoEncoder.isConfigSupported(encConfig);
-    if (!support.supported) throw new Error('H.264 encoding not supported by this browser');
 
     let encError = null;
     const encoder = new VideoEncoder({
       output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
       error: e => { encError = e; }
     });
-    encoder.configure(support.config);
+    encoder.configure(pickedConfig);
     await new Promise(r => setTimeout(r, 0));
     if (encoder.state === 'closed') throw encError || new Error('Encoder closed unexpectedly');
 
