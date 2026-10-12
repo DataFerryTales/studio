@@ -2073,7 +2073,7 @@ async function _presentExportVideo() {
 
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: muxCodec, width: cw, height: ch, frameRate: fps },
+      video: { codec: muxCodec, width: cw, height: ch },
       fastStart: 'in-memory',
       firstTimestampBehavior: 'offset'
     });
