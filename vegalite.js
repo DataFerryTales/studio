@@ -2057,24 +2057,43 @@ async function _presentExportVideo() {
     const frameDurationUs = Math.round(1_000_000 / targetFps);
 
     const candidates = [
-      { enc: 'avc1.640028', mux: 'avc' },
       { enc: 'avc1.42001f', mux: 'avc' },
       { enc: 'avc1.42001f', mux: 'avc', hw: 'prefer-software' },
+      { enc: 'avc1.640028', mux: 'avc' },
       { enc: 'vp09.00.10.08', mux: 'vp9' },
       { enc: 'av01.0.01M.08', mux: 'av1' }
     ];
+    const testCanvas = document.createElement('canvas');
+    testCanvas.width = cw; testCanvas.height = ch;
+    testCanvas.getContext('2d').fillRect(0, 0, cw, ch);
+
     let pickedConfig = null, muxCodec = null;
     for (const c of candidates) {
       const cfg = { codec: c.enc, width: cw, height: ch, bitrate: 8_000_000 };
       if (c.hw) cfg.hardwareAcceleration = c.hw;
       const s = await VideoEncoder.isConfigSupported(cfg);
-      if (s.supported) { pickedConfig = s.config; muxCodec = c.mux; break; }
+      if (!s.supported) continue;
+      try {
+        let gotChunk = false;
+        const testEnc = new VideoEncoder({
+          output: () => { gotChunk = true; },
+          error: () => {}
+        });
+        testEnc.configure(s.config);
+        const tf = new VideoFrame(testCanvas, { timestamp: 0, duration: 33333 });
+        testEnc.encode(tf, { keyFrame: true });
+        tf.close();
+        await testEnc.flush();
+        testEnc.close();
+        if (gotChunk) { pickedConfig = s.config; muxCodec = c.mux; break; }
+      } catch (_) {}
     }
+    testCanvas.remove();
     if (!pickedConfig) throw new Error('No supported video codec found in this browser');
 
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: muxCodec, width: cw, height: ch, frameRate: targetFps },
+      video: { codec: muxCodec, width: cw, height: ch },
       fastStart: 'in-memory',
       firstTimestampBehavior: 'offset'
     });
@@ -2085,8 +2104,6 @@ async function _presentExportVideo() {
       error: e => { encError = e; }
     });
     encoder.configure(pickedConfig);
-    await new Promise(r => setTimeout(r, 0));
-    if (encoder.state === 'closed') throw encError || new Error('Encoder closed unexpectedly');
 
     const tmpEl = document.createElement('div');
     tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
