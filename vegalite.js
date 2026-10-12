@@ -2155,10 +2155,21 @@ async function _presentExportVideo() {
 
     const buf = muxer.target.buffer;
     const blob = new Blob([buf], { type: 'video/mp4' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    if (window.showSaveFilePicker) {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'presentation.mp4',
+        types: [{ description: 'MP4 Video', accept: { 'video/mp4': ['.mp4'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   } catch (err) {
     console.error('Video export failed:', err);
     alert('Video export failed: ' + (err.message || err));
