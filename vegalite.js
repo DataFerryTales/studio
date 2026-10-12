@@ -1647,8 +1647,9 @@ async function _presentRender(stepIndex, animate) {
     }, 700);
   }
 
+  _annSave(_present.current);
   _present.current = stepIndex;
-  _annClear();
+  _annRestore(stepIndex);
   _presentUpdateUI();
 }
 
@@ -1845,6 +1846,28 @@ function _annClear() {
   _ann.stack = [];
 }
 
+function _annSave(stepIndex) {
+  const step = _present.steps[stepIndex];
+  if (!step) return;
+  const svg = document.getElementById('present-annotate-svg');
+  const els = Array.from(svg.children).slice(2);
+  step.annotations = els.map(el => el.outerHTML);
+}
+
+function _annRestore(stepIndex) {
+  _annClear();
+  const step = _present.steps[stepIndex];
+  if (!step?.annotations?.length) return;
+  const svg = document.getElementById('present-annotate-svg');
+  step.annotations.forEach(html => {
+    const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    tmp.innerHTML = html;
+    const el = tmp.firstChild;
+    svg.appendChild(el);
+    _ann.stack.push(el);
+  });
+}
+
 function _annUndo() {
   if (!_ann.stack.length) return;
   const el = _ann.stack.pop();
@@ -1920,6 +1943,7 @@ function _annEndDraw(e) {
     svg.appendChild(line);
     _ann.stack.push(line);
   }
+  _annSave(_present.current);
 }
 
 function _annPlaceText(e) {
@@ -1950,6 +1974,7 @@ function _annPlaceText(e) {
     el.textContent = text;
     svg.appendChild(el);
     _ann.stack.push(el);
+    _annSave(_present.current);
   };
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value = ''; input.blur(); } });
@@ -1983,8 +2008,15 @@ function _annInitEvents() {
     });
   });
   document.getElementById('ann-size').addEventListener('change', e => { _ann.size = parseFloat(e.target.value); });
-  document.getElementById('ann-undo').addEventListener('click', _annUndo);
-  document.getElementById('ann-clear').addEventListener('click', _annClear);
+  document.getElementById('ann-undo').addEventListener('click', () => {
+    _annUndo();
+    _annSave(_present.current);
+  });
+  document.getElementById('ann-clear').addEventListener('click', () => {
+    _annClear();
+    const step = _present.steps[_present.current];
+    if (step) step.annotations = [];
+  });
   document.getElementById('present-annotate-toggle').onclick = _annToggle;
 }
 
