@@ -2039,109 +2039,116 @@ async function _presentExportVideo() {
   const btn = document.getElementById('present-export');
   btn.textContent = 'EXPORTING...'; btn.disabled = true;
 
-  const wrap = document.getElementById('present-chart-inner');
-  const w = wrap.clientWidth;
-  const h = wrap.clientHeight;
-  const dpr = 2;
-  const cw = w * dpr, ch = h * dpr;
+  try {
+    const wrap = document.getElementById('present-chart-inner');
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    const dpr = 2;
+    const cw = (w * dpr) & ~1, ch = (h * dpr) & ~1;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = cw; canvas.height = ch;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+    const canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(cw / w, ch / h);
 
-  const fps = 1;
-  const frameDurationUs = 1_000_000 / fps;
-  const muxer = new Mp4Muxer.Muxer({
-    target: new Mp4Muxer.ArrayBufferTarget(),
-    video: { codec: 'avc', width: cw, height: ch },
-    fastStart: 'in-memory',
-    firstTimestampBehavior: 'offset'
-  });
+    const fps = 1;
+    const frameDurationUs = 1_000_000 / fps;
+    const muxer = new Mp4Muxer.Muxer({
+      target: new Mp4Muxer.ArrayBufferTarget(),
+      video: { codec: 'avc', width: cw, height: ch },
+      fastStart: 'in-memory',
+      firstTimestampBehavior: 'offset'
+    });
 
-  const encoder = new VideoEncoder({
-    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
-    error: e => console.error('VideoEncoder error:', e)
-  });
-  encoder.configure({
-    codec: 'avc1.640028',
-    width: cw, height: ch,
-    bitrate: 8_000_000,
-    framerate: fps
-  });
+    let encError = null;
+    const encoder = new VideoEncoder({
+      output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+      error: e => { encError = e; }
+    });
+    encoder.configure({
+      codec: 'avc1.640028',
+      width: cw, height: ch,
+      bitrate: 8_000_000,
+      framerate: fps
+    });
 
-  const tmpEl = document.createElement('div');
-  tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
-  document.body.appendChild(tmpEl);
+    const tmpEl = document.createElement('div');
+    tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
+    document.body.appendChild(tmpEl);
 
-  const svgToImg = svgEl => new Promise((resolve, reject) => {
-    const clone = svgEl.cloneNode(true);
-    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    if (!clone.getAttribute('width')) clone.setAttribute('width', svgEl.clientWidth || w);
-    if (!clone.getAttribute('height')) clone.setAttribute('height', svgEl.clientHeight || h);
-    const data = new XMLSerializer().serializeToString(clone);
-    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(); };
-    img.src = url;
-  });
+    const svgToImg = svgEl => new Promise((resolve, reject) => {
+      const clone = svgEl.cloneNode(true);
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      if (!clone.getAttribute('width')) clone.setAttribute('width', svgEl.clientWidth || w);
+      if (!clone.getAttribute('height')) clone.setAttribute('height', svgEl.clientHeight || h);
+      const data = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+      img.src = url;
+    });
 
-  for (let i = 0; i < _present.steps.length; i++) {
-    btn.textContent = `${i + 1} / ${_present.steps.length}`;
-    const spec = _presentGetSpec(i);
-    if (!spec) continue;
-    const bg = spec.config?.background || spec.background
-      || getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#ffffff';
+    for (let i = 0; i < _present.steps.length; i++) {
+      if (encError) throw encError;
+      btn.textContent = `${i + 1} / ${_present.steps.length}`;
+      const spec = _presentGetSpec(i);
+      if (!spec) continue;
+      const bg = spec.config?.background || spec.background
+        || getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#ffffff';
 
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
 
-    tmpEl.innerHTML = '';
-    try {
-      const result = await vegaEmbed(tmpEl, spec, { renderer: 'svg', actions: false });
-      const chartSvg = tmpEl.querySelector('svg');
-      if (chartSvg) {
-        const img = await svgToImg(chartSvg);
-        ctx.drawImage(img, 32, 32, w - 64, h - 64);
-      }
-      result.finalize();
-    } catch (_) {}
-
-    const step = _present.steps[i];
-    if (step.annotations?.length) {
-      const annSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      annSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      annSvg.setAttribute('width', w); annSvg.setAttribute('height', h);
-      annSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-      step.annotations.forEach(html => {
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.innerHTML = html;
-        if (g.firstChild) annSvg.appendChild(g.firstChild);
-      });
+      tmpEl.innerHTML = '';
       try {
-        const img = await svgToImg(annSvg);
-        ctx.drawImage(img, 0, 0, w, h);
+        const result = await vegaEmbed(tmpEl, spec, { renderer: 'svg', actions: false });
+        const chartSvg = tmpEl.querySelector('svg');
+        if (chartSvg) {
+          const img = await svgToImg(chartSvg);
+          ctx.drawImage(img, 32, 32, w - 64, h - 64);
+        }
+        result.finalize();
       } catch (_) {}
+
+      const step = _present.steps[i];
+      if (step.annotations?.length) {
+        const annSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        annSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        annSvg.setAttribute('width', w); annSvg.setAttribute('height', h);
+        annSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+        step.annotations.forEach(html => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.innerHTML = html;
+          if (g.firstChild) annSvg.appendChild(g.firstChild);
+        });
+        try {
+          const img = await svgToImg(annSvg);
+          ctx.drawImage(img, 0, 0, w, h);
+        } catch (_) {}
+      }
+
+      const frame = new VideoFrame(canvas, { timestamp: i * frameDurationUs, duration: frameDurationUs });
+      encoder.encode(frame, { keyFrame: true });
+      frame.close();
     }
 
-    const frame = new VideoFrame(canvas, { timestamp: i * frameDurationUs, duration: frameDurationUs });
-    encoder.encode(frame, { keyFrame: true });
-    frame.close();
+    tmpEl.remove();
+    await encoder.flush();
+    encoder.close();
+    muxer.finalize();
+
+    const buf = muxer.target.buffer;
+    const blob = new Blob([buf], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error('Video export failed:', err);
+    alert('Video export failed: ' + (err.message || err));
   }
-
-  tmpEl.remove();
-  await encoder.flush();
-  encoder.close();
-  muxer.finalize();
-
-  const buf = muxer.target.buffer;
-  const blob = new Blob([buf], { type: 'video/mp4' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 
   btn.textContent = 'EXPORT'; btn.disabled = false;
 }
