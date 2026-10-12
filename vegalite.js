@@ -2043,30 +2043,32 @@ async function _presentExportVideo() {
   const w = wrap.clientWidth;
   const h = wrap.clientHeight;
   const dpr = 2;
+  const cw = w * dpr, ch = h * dpr;
 
   const canvas = document.createElement('canvas');
-  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.width = cw; canvas.height = ch;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const stream = canvas.captureStream(0);
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9' : 'video/webm';
-  const recorder = new MediaRecorder(stream, { mimeType });
-  const chunks = [];
-  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-
-  const done = new Promise(resolve => {
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'presentation.webm';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      resolve();
-    };
+  const fps = 1;
+  const frameDurationUs = 1_000_000 / fps;
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: cw, height: ch },
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset'
   });
-  recorder.start();
+
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: e => console.error('VideoEncoder error:', e)
+  });
+  encoder.configure({
+    codec: 'avc1.640028',
+    width: cw, height: ch,
+    bitrate: 8_000_000,
+    framerate: fps
+  });
 
   const tmpEl = document.createElement('div');
   tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
@@ -2102,8 +2104,7 @@ async function _presentExportVideo() {
       const chartSvg = tmpEl.querySelector('svg');
       if (chartSvg) {
         const img = await svgToImg(chartSvg);
-        const cw = w - 64, ch = h - 64;
-        ctx.drawImage(img, 32, 32, cw, ch);
+        ctx.drawImage(img, 32, 32, w - 64, h - 64);
       }
       result.finalize();
     } catch (_) {}
@@ -2125,13 +2126,23 @@ async function _presentExportVideo() {
       } catch (_) {}
     }
 
-    stream.getVideoTracks()[0].requestFrame();
-    await new Promise(r => setTimeout(r, _present.interval));
+    const frame = new VideoFrame(canvas, { timestamp: i * frameDurationUs, duration: frameDurationUs });
+    encoder.encode(frame, { keyFrame: true });
+    frame.close();
   }
 
   tmpEl.remove();
-  recorder.stop();
-  await done;
+  await encoder.flush();
+  encoder.close();
+  muxer.finalize();
+
+  const buf = muxer.target.buffer;
+  const blob = new Blob([buf], { type: 'video/mp4' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
   btn.textContent = 'EXPORT'; btn.disabled = false;
 }
 
