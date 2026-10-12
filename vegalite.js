@@ -2043,8 +2043,9 @@ async function _presentExportVideo() {
     const wrap = document.getElementById('present-chart-inner');
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
-    const dpr = 2;
-    const cw = (w * dpr) & ~1, ch = (h * dpr) & ~1;
+    const maxDim = 1920;
+    const dpr = Math.min(2, maxDim / Math.max(w, h));
+    const cw = (Math.round(w * dpr)) & ~1, ch = (Math.round(h * dpr)) & ~1;
 
     const canvas = document.createElement('canvas');
     canvas.width = cw; canvas.height = ch;
@@ -2057,9 +2058,11 @@ async function _presentExportVideo() {
     const frameDurationUs = Math.round(1_000_000 / targetFps);
 
     const candidates = [
-      { enc: 'avc1.42001f', mux: 'avc' },
-      { enc: 'avc1.42001f', mux: 'avc', hw: 'prefer-software' },
+      { enc: 'avc1.640033', mux: 'avc' },
+      { enc: 'avc1.4d0033', mux: 'avc' },
+      { enc: 'avc1.420033', mux: 'avc' },
       { enc: 'avc1.640028', mux: 'avc' },
+      { enc: 'avc1.42001f', mux: 'avc' },
       { enc: 'vp09.00.10.08', mux: 'vp9' },
       { enc: 'av01.0.01M.08', mux: 'av1' }
     ];
@@ -2090,6 +2093,7 @@ async function _presentExportVideo() {
     }
     testCanvas.remove();
     if (!pickedConfig) throw new Error('No supported video codec found in this browser');
+    console.log('Video export codec:', pickedConfig.codec, cw + 'x' + ch);
 
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
