@@ -2157,13 +2157,17 @@ async function _presentExportVideo() {
     const blob = new Blob([buf], { type: 'video/mp4' });
 
     if (window.showSaveFilePicker) {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: 'presentation.mp4',
-        types: [{ description: 'MP4 Video', accept: { 'video/mp4': ['.mp4'] } }]
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: 'presentation.mp4',
+          types: [{ description: 'MP4 Video', accept: { 'video/mp4': ['.mp4'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } catch (e) {
+        if (e.name !== 'AbortError') throw e;
+      }
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'presentation.mp4';
