@@ -2105,6 +2105,7 @@ async function _presentExportVideo() {
       img.src = url;
     });
 
+    let frameIndex = 0;
     for (let i = 0; i < _present.steps.length; i++) {
       if (encError) throw encError;
       btn.textContent = `${i + 1} / ${_present.steps.length}`;
@@ -2144,11 +2145,12 @@ async function _presentExportVideo() {
         } catch (_) {}
       }
 
-      for (let f = 0; f < framesPerStep; f++) {
-        const ts = (i * framesPerStep + f) * frameDurationUs;
-        const frame = new VideoFrame(canvas, { timestamp: ts, duration: frameDurationUs });
+      const count = i === 0 ? framesPerStep + 2 : framesPerStep;
+      for (let f = 0; f < count; f++) {
+        const frame = new VideoFrame(canvas, { timestamp: frameIndex * frameDurationUs, duration: frameDurationUs });
         encoder.encode(frame, { keyFrame: f === 0 });
         frame.close();
+        frameIndex++;
       }
     }
 
