@@ -2034,6 +2034,107 @@ function enterPresentation() {
   _presentRender(0, false);
 }
 
+async function _presentExportVideo() {
+  _presentPause();
+  const btn = document.getElementById('present-export');
+  btn.textContent = 'EXPORTING...'; btn.disabled = true;
+
+  const wrap = document.getElementById('present-chart-inner');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  const dpr = 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const stream = canvas.captureStream(0);
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+    ? 'video/webm;codecs=vp9' : 'video/webm';
+  const recorder = new MediaRecorder(stream, { mimeType });
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+
+  const done = new Promise(resolve => {
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'presentation.webm';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      resolve();
+    };
+  });
+  recorder.start();
+
+  const tmpEl = document.createElement('div');
+  tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
+  document.body.appendChild(tmpEl);
+
+  const svgToImg = svgEl => new Promise((resolve, reject) => {
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    if (!clone.getAttribute('width')) clone.setAttribute('width', svgEl.clientWidth || w);
+    if (!clone.getAttribute('height')) clone.setAttribute('height', svgEl.clientHeight || h);
+    const data = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+    img.src = url;
+  });
+
+  for (let i = 0; i < _present.steps.length; i++) {
+    btn.textContent = `${i + 1} / ${_present.steps.length}`;
+    const spec = _presentGetSpec(i);
+    if (!spec) continue;
+    const bg = spec.config?.background || spec.background
+      || getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#ffffff';
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    tmpEl.innerHTML = '';
+    try {
+      const result = await vegaEmbed(tmpEl, spec, { renderer: 'svg', actions: false });
+      const chartSvg = tmpEl.querySelector('svg');
+      if (chartSvg) {
+        const img = await svgToImg(chartSvg);
+        const cw = w - 64, ch = h - 64;
+        ctx.drawImage(img, 32, 32, cw, ch);
+      }
+      result.finalize();
+    } catch (_) {}
+
+    const step = _present.steps[i];
+    if (step.annotations?.length) {
+      const annSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      annSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      annSvg.setAttribute('width', w); annSvg.setAttribute('height', h);
+      annSvg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      step.annotations.forEach(html => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.innerHTML = html;
+        if (g.firstChild) annSvg.appendChild(g.firstChild);
+      });
+      try {
+        const img = await svgToImg(annSvg);
+        ctx.drawImage(img, 0, 0, w, h);
+      } catch (_) {}
+    }
+
+    stream.getVideoTracks()[0].requestFrame();
+    await new Promise(r => setTimeout(r, _present.interval));
+  }
+
+  tmpEl.remove();
+  recorder.stop();
+  await done;
+  btn.textContent = 'EXPORT'; btn.disabled = false;
+}
+
 function exitPresentation() {
   _presentPause();
   if (_present.embedA) { try { _present.embedA.finalize(); } catch(_){} _present.embedA = null; }
@@ -2229,6 +2330,7 @@ function bindEvents() {
     _presentRenderStepList();
     _presentUpdateUI();
   };
+  document.getElementById('present-export').onclick = _presentExportVideo;
   document.getElementById('present-exit').onclick = exitPresentation;
   document.getElementById('present-play').onclick = _presentTogglePlay;
   document.getElementById('present-next').onclick = _presentNext;
