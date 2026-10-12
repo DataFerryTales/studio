@@ -3915,6 +3915,47 @@ function rebuildAxisSection(spec, axis) {
   });
   offCtrl.appendChild(offSel); offRow.appendChild(offCtrl); body.appendChild(offRow);
 
+  // Label font size row
+  const fsRow = document.createElement('div'); fsRow.className = 'prop-row';
+  fsRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Label size' }));
+  const fsCtrl = document.createElement('div'); fsCtrl.className = 'prop-ctrl';
+  const fsInp  = document.createElement('input'); fsInp.type = 'number'; fsInp.min = 6; fsInp.max = 32;
+  fsInp.placeholder = 'auto'; fsInp.value = aO.labelFontSize != null ? aO.labelFontSize : '';
+  fsInp.addEventListener('change', () => {
+    patchSpec(spec => {
+      const enc = _resolveAxisEnc(spec, axis);
+      if (!enc) return;
+      if (enc.axis === null || enc.axis === false) return;
+      if (!enc.axis || typeof enc.axis !== 'object') enc.axis = {};
+      if (fsInp.value !== '' && +fsInp.value) enc.axis.labelFontSize = +fsInp.value;
+      else delete enc.axis.labelFontSize;
+    });
+  });
+  fsCtrl.appendChild(fsInp); fsRow.appendChild(fsCtrl); body.appendChild(fsRow);
+
+  // Label font weight row
+  const fwRow = document.createElement('div'); fwRow.className = 'prop-row';
+  fwRow.appendChild(Object.assign(document.createElement('span'), { className: 'prop-label', textContent: 'Label weight' }));
+  const fwCtrl = document.createElement('div'); fwCtrl.className = 'prop-ctrl';
+  const fwSel  = document.createElement('select');
+  const curFw  = aO.labelFontWeight != null ? String(aO.labelFontWeight) : '';
+  [['', 'Auto'], ['100', 'Thin'], ['300', 'Light'], ['400', 'Normal'], ['600', 'Semi-bold'], ['700', 'Bold']].forEach(([val, lbl]) => {
+    const o = document.createElement('option'); o.value = val; o.textContent = lbl;
+    if (val === curFw) o.selected = true;
+    fwSel.appendChild(o);
+  });
+  fwSel.addEventListener('change', () => {
+    patchSpec(spec => {
+      const enc = _resolveAxisEnc(spec, axis);
+      if (!enc) return;
+      if (enc.axis === null || enc.axis === false) return;
+      if (!enc.axis || typeof enc.axis !== 'object') enc.axis = {};
+      if (fwSel.value !== '') enc.axis.labelFontWeight = +fwSel.value;
+      else delete enc.axis.labelFontWeight;
+    });
+  });
+  fwCtrl.appendChild(fwSel); fwRow.appendChild(fwCtrl); body.appendChild(fwRow);
+
   _lastAxisSig = _axisSig(spec);
 }
 
