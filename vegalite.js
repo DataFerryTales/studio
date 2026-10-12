@@ -2060,17 +2060,24 @@ async function _presentExportVideo() {
       firstTimestampBehavior: 'offset'
     });
 
+    const encConfig = {
+      codec: 'avc1.42001f',
+      width: cw, height: ch,
+      bitrate: 8_000_000,
+      framerate: fps,
+      hardwareAcceleration: 'prefer-software'
+    };
+    const support = await VideoEncoder.isConfigSupported(encConfig);
+    if (!support.supported) throw new Error('H.264 encoding not supported by this browser');
+
     let encError = null;
     const encoder = new VideoEncoder({
       output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
       error: e => { encError = e; }
     });
-    encoder.configure({
-      codec: 'avc1.640028',
-      width: cw, height: ch,
-      bitrate: 8_000_000,
-      framerate: fps
-    });
+    encoder.configure(support.config);
+    await new Promise(r => setTimeout(r, 0));
+    if (encoder.state === 'closed') throw encError || new Error('Encoder closed unexpectedly');
 
     const tmpEl = document.createElement('div');
     tmpEl.style.cssText = `position:absolute;left:-9999px;width:${w - 64}px;height:${h - 64}px;`;
