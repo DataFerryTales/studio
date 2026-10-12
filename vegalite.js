@@ -2052,8 +2052,8 @@ async function _presentExportVideo() {
     ctx.scale(cw / w, ch / h);
 
     const stepDurationMs = _present.interval || 3000;
-    const frameDurationUs = stepDurationMs * 1000;
-    const fps = 1000 / stepDurationMs;
+    const framesPerStep = Math.max(1, Math.round(stepDurationMs / 1000));
+    const frameDurationUs = 1_000_000;
 
     const candidates = [
       { enc: 'avc1.640028', mux: 'avc' },
@@ -2073,7 +2073,7 @@ async function _presentExportVideo() {
 
     const muxer = new Mp4Muxer.Muxer({
       target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: muxCodec, width: cw, height: ch },
+      video: { codec: muxCodec, width: cw, height: ch, frameRate: 1 },
       fastStart: 'in-memory',
       firstTimestampBehavior: 'offset'
     });
@@ -2144,9 +2144,12 @@ async function _presentExportVideo() {
         } catch (_) {}
       }
 
-      const frame = new VideoFrame(canvas, { timestamp: i * frameDurationUs, duration: frameDurationUs });
-      encoder.encode(frame, { keyFrame: true });
-      frame.close();
+      for (let f = 0; f < framesPerStep; f++) {
+        const ts = (i * framesPerStep + f) * frameDurationUs;
+        const frame = new VideoFrame(canvas, { timestamp: ts, duration: frameDurationUs });
+        encoder.encode(frame, { keyFrame: f === 0 });
+        frame.close();
+      }
     }
 
     tmpEl.remove();
