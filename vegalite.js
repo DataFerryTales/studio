@@ -10,7 +10,7 @@ function _buildCfg(bg, font, axisLabel, axisGrid, axisDomain, titleColor, mark, 
     background: bg, view: { stroke: null }, font,
     axis: { labelColor: axisLabel, titleColor: axisLabel, gridColor: axisGrid, domainColor: axisDomain, tickColor: axisDomain, labelFontSize: 11, titleFontSize: 11, titleFontWeight: 600 },
     legend: { labelColor: axisLabel, titleColor: axisLabel, labelFontSize: 11, titleFontSize: 11 },
-    title: { color: titleColor, fontSize: 14, fontWeight: 700, anchor: "start", offset: 8 },
+    title: { color: titleColor, subtitleColor: text, fontSize: 14, fontWeight: 700, anchor: "start", offset: 8 },
     range: { category: range },
     mark: mc, bar: mc, line: mc, point: mc, arc: mc, rule: mc, tick: mc,
     text: { color: text }
