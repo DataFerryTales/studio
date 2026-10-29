@@ -385,7 +385,7 @@ const TEMPLATES = [
     }
   },
   { id:"waffle", name:"WAFFLE %", icon:"▦%",
-    spec: { "$schema":SCHEMA, "title":{"text":"Percentage of people who actually get back to you after saying 'reach out if you need anything'","subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitleColor":"#FF6F00","subtitlePadding":8},
+    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitleColor":"#FF6F00","subtitlePadding":8},
       "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
       "params":[
         {"name":"pct","value":3,"bind":{"input":"range","min":0,"max":100,"step":1,"name":"Percentage"}}
