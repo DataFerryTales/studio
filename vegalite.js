@@ -385,7 +385,7 @@ const TEMPLATES = [
     }
   },
   { id:"waffle", name:"WAFFLE %", icon:"▦%",
-    spec: { "$schema":SCHEMA, "title":{"text":{"expr":"pct + '% of people who reply let me know if you need anything'"},"subtitle":"actually mean it","subtitleFontWeight":300,"subtitleFontSize":11,"subtitlePadding":4},
+    spec: { "$schema":SCHEMA, "title":{"text":"Of people who say let me know if I can ever help","subtitle":{"expr":"'only ' + pct + '% actually mean it'"},"subtitleFontWeight":700,"subtitleFontSize":13,"subtitlePadding":4},
       "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
       "params":[
         {"name":"pct","value":3,"bind":{"input":"range","min":0,"max":100,"step":1,"name":"Percentage"}}
