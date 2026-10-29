@@ -3779,7 +3779,7 @@ function syncPropsFromSpec() {
     document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
   } else if (tv && typeof tv === 'object') {
     syncedTitleColor = tv.color || defaultTitleColor;
-    document.getElementById('pp-title-text').value         = Array.isArray(tv.text) ? tv.text.join(' ') : (tv.text || '');
+    document.getElementById('pp-title-text').value         = Array.isArray(tv.text) ? tv.text.join(' | ') : (tv.text || '');
     document.getElementById('pp-title-sub').value          = (tv.subtitle && typeof tv.subtitle === 'object' && tv.subtitle.expr) ? tv.subtitle.expr : (tv.subtitle || '');
     document.getElementById('pp-title-size').value         = tv.fontSize || '';
     document.getElementById('pp-title-color').value        = syncedTitleColor;
@@ -3838,8 +3838,7 @@ function applyTitleProps() {
     const anc     = document.getElementById('pp-title-anchor').value;
     if (!text && !sub) { delete spec.title; return; }
     const prevTitle = spec.title && typeof spec.title === 'object' ? spec.title : {};
-    const prevFlat = Array.isArray(prevTitle.text) ? prevTitle.text.join(' ') : (prevTitle.text || '');
-    const titleText = (Array.isArray(prevTitle.text) && text === prevFlat) ? prevTitle.text : (text || '');
+    const titleText = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
     spec.title = { text: titleText };
     if (sub) {
       const prevSub = prevTitle.subtitle;
