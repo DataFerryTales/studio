@@ -3779,8 +3779,8 @@ function syncPropsFromSpec() {
     document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
   } else if (tv && typeof tv === 'object') {
     syncedTitleColor = tv.color || defaultTitleColor;
-    document.getElementById('pp-title-text').value         = tv.text     || '';
-    document.getElementById('pp-title-sub').value          = tv.subtitle || '';
+    document.getElementById('pp-title-text').value         = Array.isArray(tv.text) ? tv.text.join('\n') : (tv.text || '');
+    document.getElementById('pp-title-sub').value          = (tv.subtitle && typeof tv.subtitle === 'object' && tv.subtitle.expr) ? tv.subtitle.expr : (tv.subtitle || '');
     document.getElementById('pp-title-size').value         = tv.fontSize || '';
     document.getElementById('pp-title-color').value        = syncedTitleColor;
     document.getElementById('pp-title-sub-size').value     = tv.subtitleFontSize || '';
@@ -3837,8 +3837,16 @@ function applyTitleProps() {
     const subCol  = document.getElementById('pp-title-sub-color').value;
     const anc     = document.getElementById('pp-title-anchor').value;
     if (!text && !sub) { delete spec.title; return; }
-    spec.title = { text: text || '' };
-    if (sub)             spec.title.subtitle          = sub;
+    const prevTitle = spec.title && typeof spec.title === 'object' ? spec.title : {};
+    const parsedText = text.includes('\n') ? text.split('\n') : text;
+    spec.title = { text: parsedText || '' };
+    if (sub) {
+      const prevSub = prevTitle.subtitle;
+      if (prevSub && typeof prevSub === 'object' && prevSub.expr) spec.title.subtitle = prevSub;
+      else spec.title.subtitle = sub;
+    }
+    if (prevTitle.subtitleFontWeight) spec.title.subtitleFontWeight = prevTitle.subtitleFontWeight;
+    if (prevTitle.subtitlePadding)    spec.title.subtitlePadding    = prevTitle.subtitlePadding;
     if (sz)              spec.title.fontSize          = parseInt(sz);
     if (col)             spec.title.color             = col;
     if (sub && subSz)  spec.title.subtitleFontSize = parseInt(subSz);
