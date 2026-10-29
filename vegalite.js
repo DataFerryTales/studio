@@ -3840,7 +3840,11 @@ function applyTitleProps() {
     const anc     = document.getElementById('pp-title-anchor').value;
     if (!text && !sub) { delete spec.title; return; }
     if (!spec.title || typeof spec.title !== 'object') spec.title = {};
-    spec.title.text = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
+    // Only overwrite text if the form value differs from the current spec value
+    const curText = Array.isArray(spec.title.text) ? spec.title.text.join(' | ') : (spec.title.text || '');
+    if (text !== curText) {
+      spec.title.text = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
+    }
     if (sub) {
       if (!(spec.title.subtitle && typeof spec.title.subtitle === 'object' && spec.title.subtitle.expr))
         spec.title.subtitle = sub;
