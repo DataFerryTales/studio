@@ -384,6 +384,35 @@ const TEMPLATES = [
       ]
     }
   },
+  { id:"waffle", name:"WAFFLE %", icon:"▦%",
+    spec: { "$schema":SCHEMA, "title":{"text":"People who reply 'let me know if you need anything'","subtitle":"and actually mean it","subtitleFontWeight":300,"subtitleFontSize":11,"subtitlePadding":4},
+      "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
+      "params":[
+        {"name":"pct","value":3,"bind":{"input":"range","min":0,"max":100,"step":1,"name":"Percentage"}}
+      ],
+      "transform":[
+        {"calculate":"floor(datum.i / 10)","as":"row"},
+        {"calculate":"datum.i % 10","as":"col"}
+      ],
+      "width":300,"height":300,
+      "layer":[
+        {
+          "mark":{"type":"square","size":700,"cornerRadius":3,"stroke":null,"cursor":"default"},
+          "encoding":{
+            "x":{"field":"col","type":"ordinal","axis":null},
+            "y":{"field":"row","type":"ordinal","axis":null,"sort":"descending"},
+            "color":{"condition":{"test":"datum.i < pct","value":"#FF6F00"},"value":"#e0e0e0"},
+            "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.4}
+          }
+        },
+        {
+          "mark":{"type":"text","fontSize":64,"fontWeight":900,"align":"center","baseline":"middle","x":{"expr":"width/2"},"y":{"expr":"height/2"},"opacity":0.15},
+          "data":{"values":[{}]},
+          "encoding":{"text":{"value":{"expr":"pct + '%'"}}}
+        }
+      ]
+    }
+  },
   { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
     spec: { "$schema":SCHEMA, "data":{"url":DS+"gapminder.json"},
       "params":[
