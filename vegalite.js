@@ -3795,8 +3795,10 @@ function syncPropsFromSpec() {
     document.getElementById('pp-title-sub-color').value    = defaultTitleColor;
     document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
   }
-  // Reset the sync tracker so the title→subtitle colour link works correctly after a template switch
+  // Reset the sync/dirty trackers so the title→subtitle colour link works correctly after a template switch
   document.getElementById('pp-title-color').dataset.lastSync = syncedTitleColor;
+  delete document.getElementById('pp-title-color').dataset.dirty;
+  delete document.getElementById('pp-title-sub-color').dataset.dirty;
 
   // ── X AXIS / Y AXIS — fully dynamic rebuild ──────────────────
   rebuildAxisSection(spec, 'x');
@@ -3847,9 +3849,11 @@ function applyTitleProps() {
       delete spec.title.subtitleFontWeight; delete spec.title.subtitlePadding;
     }
     if (sz)  spec.title.fontSize = parseInt(sz); else delete spec.title.fontSize;
-    if (col) spec.title.color    = col;
-    if (sub && subSz)  spec.title.subtitleFontSize = parseInt(subSz);
-    if (sub && subCol) spec.title.subtitleColor   = subCol;
+    const colDirty = document.getElementById('pp-title-color').dataset.dirty === '1';
+    if (col && (spec.title.color || colDirty)) spec.title.color = col;
+    if (sub && subSz && spec.title.subtitleFontSize) spec.title.subtitleFontSize = parseInt(subSz);
+    const subColDirty = document.getElementById('pp-title-sub-color').dataset.dirty === '1';
+    if (sub && subCol && (spec.title.subtitleColor || subColDirty)) spec.title.subtitleColor = subCol;
     if (anc !== 'start') spec.title.anchor = anc; else delete spec.title.anchor;
   });
 }
@@ -6297,16 +6301,21 @@ function syncTransformPanel(root) {
   ['pp-title-text', 'pp-title-sub', 'pp-title-size', 'pp-title-sub-size', 'pp-title-anchor'].forEach(id =>
     document.getElementById(id).addEventListener('change', applyTitleProps));
   document.getElementById('pp-title-color').addEventListener('input', () => {
+    document.getElementById('pp-title-color').dataset.dirty = '1';
     // Keep sub colour in sync unless the user has already diverged it
     const titleCol = document.getElementById('pp-title-color').value;
     const subCol   = document.getElementById('pp-title-sub-color').value;
     if (subCol === document.getElementById('pp-title-color').dataset.lastSync || !document.getElementById('pp-title-color').dataset.lastSync) {
       document.getElementById('pp-title-sub-color').value = titleCol;
+      document.getElementById('pp-title-sub-color').dataset.dirty = '1';
     }
     document.getElementById('pp-title-color').dataset.lastSync = titleCol;
     applyTitleProps();
   });
-  document.getElementById('pp-title-sub-color').addEventListener('input', applyTitleProps);
+  document.getElementById('pp-title-sub-color').addEventListener('input', () => {
+    document.getElementById('pp-title-sub-color').dataset.dirty = '1';
+    applyTitleProps();
+  });
 
   // X/Y axis and Marks — events are wired dynamically by rebuildAxisSection() / rebuildMarkSection()
 
