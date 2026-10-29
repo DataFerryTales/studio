@@ -388,7 +388,7 @@ const TEMPLATES = [
     spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
       "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
       "params":[
-        {"name":"pct","value":3,"bind":{"input":"number","min":0,"max":100,"step":1,"name":"Percentage"}}
+        {"name":"pct","value":3,"bind":{"input":"number","min":0,"max":100,"step":1,"name":"Percentage  "}}
       ],
       "transform":[
         {"calculate":"floor(datum.i / 10)","as":"row"},
