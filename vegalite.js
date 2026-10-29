@@ -3795,10 +3795,8 @@ function syncPropsFromSpec() {
     document.getElementById('pp-title-sub-color').value    = defaultTitleColor;
     document.getElementById('pp-title-anchor').value       = cfg.title && cfg.title.anchor ? cfg.title.anchor : 'start';
   }
-  // Reset the sync/dirty trackers so the title→subtitle colour link works correctly after a template switch
+  // Reset the sync tracker so the title→subtitle colour link works correctly after a template switch
   document.getElementById('pp-title-color').dataset.lastSync = syncedTitleColor;
-  delete document.getElementById('pp-title-color').dataset.dirty;
-  delete document.getElementById('pp-title-sub-color').dataset.dirty;
 
   // ── X AXIS / Y AXIS — fully dynamic rebuild ──────────────────
   rebuildAxisSection(spec, 'x');
@@ -3829,36 +3827,54 @@ function syncPropsFromSpec() {
 }
 
 // ── Apply helpers ─────────────────────────────────────────────
-function applyTitleProps() {
+function applyTitleProps(changedId) {
   patchSpec(spec => {
-    const text    = document.getElementById('pp-title-text').value.trim();
-    const sub     = document.getElementById('pp-title-sub').value.trim();
-    const sz      = document.getElementById('pp-title-size').value;
-    const col     = document.getElementById('pp-title-color').value;
-    const subSz   = document.getElementById('pp-title-sub-size').value;
-    const subCol  = document.getElementById('pp-title-sub-color').value;
-    const anc     = document.getElementById('pp-title-anchor').value;
-    if (!text && !sub) { delete spec.title; return; }
     if (!spec.title || typeof spec.title !== 'object') spec.title = {};
-    // Only overwrite text if the form value differs from the current spec value
-    const curText = Array.isArray(spec.title.text) ? spec.title.text.join(' | ') : (spec.title.text || '');
-    if (text !== curText) {
-      spec.title.text = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
+    switch (changedId) {
+      case 'pp-title-text': {
+        const text = document.getElementById('pp-title-text').value.trim();
+        if (!text && !spec.title.subtitle) { delete spec.title; return; }
+        spec.title.text = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
+        break;
+      }
+      case 'pp-title-sub': {
+        const sub = document.getElementById('pp-title-sub').value.trim();
+        if (sub) {
+          if (!(spec.title.subtitle && typeof spec.title.subtitle === 'object' && spec.title.subtitle.expr))
+            spec.title.subtitle = sub;
+        } else {
+          delete spec.title.subtitle; delete spec.title.subtitleFontSize; delete spec.title.subtitleColor;
+          delete spec.title.subtitleFontWeight; delete spec.title.subtitlePadding;
+        }
+        break;
+      }
+      case 'pp-title-size': {
+        const sz = document.getElementById('pp-title-size').value;
+        if (sz) spec.title.fontSize = parseInt(sz); else delete spec.title.fontSize;
+        break;
+      }
+      case 'pp-title-color': {
+        const col = document.getElementById('pp-title-color').value;
+        if (col) spec.title.color = col;
+        break;
+      }
+      case 'pp-title-sub-size': {
+        const subSz = document.getElementById('pp-title-sub-size').value;
+        if (subSz) spec.title.subtitleFontSize = parseInt(subSz); else delete spec.title.subtitleFontSize;
+        break;
+      }
+      case 'pp-title-sub-color': {
+        const subCol = document.getElementById('pp-title-sub-color').value;
+        if (subCol) spec.title.subtitleColor = subCol;
+        break;
+      }
+      case 'pp-title-anchor': {
+        const anc = document.getElementById('pp-title-anchor').value;
+        if (anc !== 'start') spec.title.anchor = anc; else delete spec.title.anchor;
+        break;
+      }
     }
-    if (sub) {
-      if (!(spec.title.subtitle && typeof spec.title.subtitle === 'object' && spec.title.subtitle.expr))
-        spec.title.subtitle = sub;
-    } else {
-      delete spec.title.subtitle; delete spec.title.subtitleFontSize; delete spec.title.subtitleColor;
-      delete spec.title.subtitleFontWeight; delete spec.title.subtitlePadding;
-    }
-    if (sz)  spec.title.fontSize = parseInt(sz); else delete spec.title.fontSize;
-    const colDirty = document.getElementById('pp-title-color').dataset.dirty === '1';
-    if (col && (spec.title.color || colDirty)) spec.title.color = col;
-    if (sub && subSz && spec.title.subtitleFontSize) spec.title.subtitleFontSize = parseInt(subSz);
-    const subColDirty = document.getElementById('pp-title-sub-color').dataset.dirty === '1';
-    if (sub && subCol && (spec.title.subtitleColor || subColDirty)) spec.title.subtitleColor = subCol;
-    if (anc !== 'start') spec.title.anchor = anc; else delete spec.title.anchor;
+    if (spec.title && !spec.title.text && !spec.title.subtitle) delete spec.title;
   });
 }
 
@@ -6303,22 +6319,20 @@ function syncTransformPanel(root) {
 (function initPropsPanel() {
   // Title — use 'change' on text/number so we don't re-render mid-typing
   ['pp-title-text', 'pp-title-sub', 'pp-title-size', 'pp-title-sub-size', 'pp-title-anchor'].forEach(id =>
-    document.getElementById(id).addEventListener('change', applyTitleProps));
+    document.getElementById(id).addEventListener('change', () => { applyTitleProps(id); }));
   document.getElementById('pp-title-color').addEventListener('input', () => {
-    document.getElementById('pp-title-color').dataset.dirty = '1';
     // Keep sub colour in sync unless the user has already diverged it
     const titleCol = document.getElementById('pp-title-color').value;
     const subCol   = document.getElementById('pp-title-sub-color').value;
     if (subCol === document.getElementById('pp-title-color').dataset.lastSync || !document.getElementById('pp-title-color').dataset.lastSync) {
       document.getElementById('pp-title-sub-color').value = titleCol;
-      document.getElementById('pp-title-sub-color').dataset.dirty = '1';
+      applyTitleProps('pp-title-sub-color');
     }
     document.getElementById('pp-title-color').dataset.lastSync = titleCol;
-    applyTitleProps();
+    applyTitleProps('pp-title-color');
   });
   document.getElementById('pp-title-sub-color').addEventListener('input', () => {
-    document.getElementById('pp-title-sub-color').dataset.dirty = '1';
-    applyTitleProps();
+    applyTitleProps('pp-title-sub-color');
   });
 
   // X/Y axis and Marks — events are wired dynamically by rebuildAxisSection() / rebuildMarkSection()
