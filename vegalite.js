@@ -385,7 +385,7 @@ const TEMPLATES = [
     }
   },
   { id:"waffle", name:"WAFFLE %", icon:"▦%",
-    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitleColor":"#FF6F00","subtitlePadding":8},
+    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
       "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
       "params":[
         {"name":"pct","value":3,"bind":{"input":"range","min":0,"max":100,"step":1,"name":"Percentage"}}
@@ -399,8 +399,7 @@ const TEMPLATES = [
       "encoding":{
         "x":{"field":"col","type":"ordinal","axis":null},
         "y":{"field":"row","type":"ordinal","axis":null,"sort":"descending"},
-        "color":{"condition":{"test":"datum.i < pct","value":"#FF6F00"},"value":"#e0e0e0"},
-        "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.4}
+        "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.15}
       }
     }
   },
