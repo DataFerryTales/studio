@@ -3837,21 +3837,20 @@ function applyTitleProps() {
     const subCol  = document.getElementById('pp-title-sub-color').value;
     const anc     = document.getElementById('pp-title-anchor').value;
     if (!text && !sub) { delete spec.title; return; }
-    const prevTitle = spec.title && typeof spec.title === 'object' ? spec.title : {};
-    const titleText = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
-    spec.title = { text: titleText };
+    if (!spec.title || typeof spec.title !== 'object') spec.title = {};
+    spec.title.text = text.includes('|') ? text.split('|').map(s => s.trim()) : (text || '');
     if (sub) {
-      const prevSub = prevTitle.subtitle;
-      if (prevSub && typeof prevSub === 'object' && prevSub.expr) spec.title.subtitle = prevSub;
-      else spec.title.subtitle = sub;
+      if (!(spec.title.subtitle && typeof spec.title.subtitle === 'object' && spec.title.subtitle.expr))
+        spec.title.subtitle = sub;
+    } else {
+      delete spec.title.subtitle; delete spec.title.subtitleFontSize; delete spec.title.subtitleColor;
+      delete spec.title.subtitleFontWeight; delete spec.title.subtitlePadding;
     }
-    if (prevTitle.subtitleFontWeight) spec.title.subtitleFontWeight = prevTitle.subtitleFontWeight;
-    if (prevTitle.subtitlePadding)    spec.title.subtitlePadding    = prevTitle.subtitlePadding;
-    if (sz)              spec.title.fontSize          = parseInt(sz);
-    if (col)             spec.title.color             = col;
+    if (sz)  spec.title.fontSize = parseInt(sz); else delete spec.title.fontSize;
+    if (col) spec.title.color    = col;
     if (sub && subSz)  spec.title.subtitleFontSize = parseInt(subSz);
     if (sub && subCol) spec.title.subtitleColor   = subCol;
-    if (anc !== 'start') spec.title.anchor            = anc;
+    if (anc !== 'start') spec.title.anchor = anc; else delete spec.title.anchor;
   });
 }
 
