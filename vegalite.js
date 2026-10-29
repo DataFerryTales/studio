@@ -385,7 +385,7 @@ const TEMPLATES = [
     }
   },
   { id:"waffle", name:"WAFFLE %", icon:"▦%",
-    spec: { "$schema":SCHEMA, "title":{"text":"Of people who say let me know if I can ever help","subtitle":{"expr":"'only ' + pct + '% actually mean it'"},"subtitleFontWeight":700,"subtitleFontSize":13,"subtitlePadding":4},
+    spec: { "$schema":SCHEMA, "title":{"text":"Of people who say let me know if I can ever help","subtitle":"actually mean it","subtitleFontWeight":300,"subtitleFontSize":11,"subtitlePadding":4},
       "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
       "params":[
         {"name":"pct","value":3,"bind":{"input":"range","min":0,"max":100,"step":1,"name":"Percentage"}}
@@ -395,13 +395,30 @@ const TEMPLATES = [
         {"calculate":"datum.i % 10","as":"col"}
       ],
       "width":300,"height":300,
-      "mark":{"type":"square","size":700,"cornerRadius":3,"stroke":null,"cursor":"default"},
-      "encoding":{
-        "x":{"field":"col","type":"ordinal","axis":null},
-        "y":{"field":"row","type":"ordinal","axis":null,"sort":"descending"},
-        "color":{"condition":{"test":"datum.i < pct","value":"#FF6F00"},"value":"#e0e0e0"},
-        "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.4}
-      }
+      "layer":[
+        {
+          "mark":{"type":"square","size":700,"cornerRadius":3,"stroke":null,"cursor":"default"},
+          "encoding":{
+            "x":{"field":"col","type":"ordinal","axis":null},
+            "y":{"field":"row","type":"ordinal","axis":null,"sort":"descending"},
+            "color":{"condition":{"test":"datum.i < pct","value":"#FF6F00"},"value":"#e0e0e0"},
+            "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.4}
+          }
+        },
+        {
+          "data":{"values":[{}]},
+          "layer":[
+            {
+              "mark":{"type":"text","fontSize":12,"fontWeight":300,"align":"center","baseline":"bottom","x":{"expr":"width/2"},"y":{"expr":"height/2 - 6"}},
+              "encoding":{"text":{"value":"only"}}
+            },
+            {
+              "mark":{"type":"text","fontSize":48,"fontWeight":900,"align":"center","baseline":"middle","x":{"expr":"width/2"},"y":{"expr":"height/2 + 16"},"color":"#FF6F00"},
+              "encoding":{"text":{"value":{"expr":"pct + '%'"}}}
+            }
+          ]
+        }
+      ]
     }
   },
   { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
