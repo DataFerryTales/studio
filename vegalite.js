@@ -410,20 +410,22 @@ const TEMPLATES = [
         {"name":"pct","value":3.2,"bind":{"input":"number","min":0,"max":100,"step":0.1,"name":"Percentage  "}}
       ],
       "transform":[
-        {"calculate":"floor(datum.i / 25)","as":"mini"},
-        {"calculate":"datum.i % 25","as":"sub"},
-        {"calculate":"datum.mini % 8","as":"miniCol"},
-        {"calculate":"floor(datum.mini / 8)","as":"miniRow"},
-        {"calculate":"datum.sub % 5","as":"subCol"},
-        {"calculate":"floor(datum.sub / 5)","as":"subRow"},
-        {"calculate":"datum.miniCol * 7 + datum.subCol","as":"x"},
-        {"calculate":"datum.miniRow * 7 + datum.subRow","as":"y"}
+        {"calculate":"floor(datum.i / 10)","as":"block"},
+        {"calculate":"datum.i % 10","as":"strip"},
+        {"calculate":"datum.block % 10","as":"blockCol"},
+        {"calculate":"floor(datum.block / 10)","as":"blockRow"},
+        {"calculate":"datum.blockCol * 13","as":"x"},
+        {"calculate":"datum.blockCol * 13 + 10","as":"x2"},
+        {"calculate":"datum.blockRow * 13 + datum.strip","as":"y"},
+        {"calculate":"datum.blockRow * 13 + datum.strip + 0.82","as":"y2"}
       ],
-      "width":440,"height":270,
-      "mark":{"type":"square","size":36,"cornerRadius":0.5,"stroke":null,"cursor":"default"},
+      "width":460,"height":460,
+      "mark":{"type":"rect","stroke":null,"cursor":"default"},
       "encoding":{
-        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,53.5],"nice":false,"zero":false}},
-        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,32.5],"nice":false,"zero":false}},
+        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,127.5],"nice":false,"zero":false}},
+        "x2":{"field":"x2"},
+        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,127.5],"nice":false,"zero":false}},
+        "y2":{"field":"y2"},
         "opacity":{"condition":{"test":"datum.i < round(pct * 10)","value":1},"value":0.13}
       }
     }
