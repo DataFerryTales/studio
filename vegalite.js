@@ -403,6 +403,31 @@ const TEMPLATES = [
       }
     }
   },
+  { id:"waffle-decimal", name:"WAFFLE 0.1%", icon:"▦.%",
+    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
+      "data":{"sequence":{"start":0,"stop":1000,"as":"i"}},
+      "params":[
+        {"name":"pct","value":0.3,"bind":{"input":"number","min":0,"max":100,"step":0.1,"name":"Percentage  "}}
+      ],
+      "transform":[
+        {"calculate":"floor(datum.i / 10)","as":"macro"},
+        {"calculate":"datum.i % 10","as":"mini"},
+        {"calculate":"datum.macro % 10","as":"macroCol"},
+        {"calculate":"floor(datum.macro / 10)","as":"macroRow"},
+        {"calculate":"datum.mini % 2","as":"miniCol"},
+        {"calculate":"floor(datum.mini / 2)","as":"miniRow"},
+        {"calculate":"datum.macroCol * 2.7 + datum.miniCol","as":"x"},
+        {"calculate":"datum.macroRow * 5.9 + datum.miniRow","as":"y"}
+      ],
+      "width":200,"height":460,
+      "mark":{"type":"square","size":45,"cornerRadius":1,"stroke":null,"cursor":"default"},
+      "encoding":{
+        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,25.8],"nice":false,"zero":false}},
+        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,57.6],"nice":false,"zero":false}},
+        "opacity":{"condition":{"test":"datum.i < round(pct * 10)","value":1},"value":0.15}
+      }
+    }
+  },
   { id:"dashboard", name:"DASHBOARD", icon:"▦▭",
     spec: { "$schema":SCHEMA, "data":{"url":DS+"gapminder.json"},
       "params":[
