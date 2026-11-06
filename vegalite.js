@@ -386,25 +386,6 @@ const TEMPLATES = [
   },
   { id:"waffle", name:"WAFFLE %", icon:"▦%",
     spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
-      "data":{"sequence":{"start":0,"stop":100,"as":"i"}},
-      "params":[
-        {"name":"pct","value":3,"bind":{"input":"number","min":0,"max":100,"step":1,"name":"Percentage  "}}
-      ],
-      "transform":[
-        {"calculate":"floor(datum.i / 10)","as":"row"},
-        {"calculate":"datum.i % 10","as":"col"}
-      ],
-      "width":300,"height":300,
-      "mark":{"type":"square","size":700,"cornerRadius":3,"stroke":null,"cursor":"default"},
-      "encoding":{
-        "x":{"field":"col","type":"ordinal","axis":null},
-        "y":{"field":"row","type":"ordinal","axis":null,"sort":"descending"},
-        "opacity":{"condition":{"test":"datum.i < pct","value":1},"value":0.15}
-      }
-    }
-  },
-  { id:"waffle-decimal", name:"WAFFLE 0.1%", icon:"▦.%",
-    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
       "data":{"sequence":{"start":0,"stop":1000,"as":"i"}},
       "params":[
         {"name":"pct","value":3.2,"bind":{"input":"number","min":0,"max":100,"step":0.1,"name":"Percentage  "}}
