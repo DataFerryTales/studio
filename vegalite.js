@@ -405,26 +405,26 @@ const TEMPLATES = [
   },
   { id:"waffle-decimal", name:"WAFFLE 0.1%", icon:"▦.%",
     spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
-      "data":{"sequence":{"start":0,"stop":10000,"as":"i"}},
+      "data":{"sequence":{"start":0,"stop":2500,"as":"i"}},
       "params":[
         {"name":"pct","value":3.2,"bind":{"input":"number","min":0,"max":100,"step":0.1,"name":"Percentage  "}}
       ],
       "transform":[
-        {"calculate":"floor(datum.i / 100)","as":"macro"},
-        {"calculate":"datum.i % 100","as":"sub"},
+        {"calculate":"floor(datum.i / 25)","as":"macro"},
+        {"calculate":"datum.i % 25","as":"sub"},
         {"calculate":"datum.macro % 10","as":"macroCol"},
         {"calculate":"floor(datum.macro / 10)","as":"macroRow"},
-        {"calculate":"datum.sub % 10","as":"subCol"},
-        {"calculate":"floor(datum.sub / 10)","as":"subRow"},
-        {"calculate":"datum.macroCol * 14 + datum.subCol","as":"x"},
-        {"calculate":"datum.macroRow * 14 + datum.subRow","as":"y"}
+        {"calculate":"datum.sub % 5","as":"subCol"},
+        {"calculate":"floor(datum.sub / 5)","as":"subRow"},
+        {"calculate":"datum.macroCol * 7 + datum.subCol","as":"x"},
+        {"calculate":"datum.macroRow * 7 + datum.subRow","as":"y"}
       ],
-      "width":460,"height":460,
-      "mark":{"type":"square","size":7,"stroke":null,"cursor":"default"},
+      "width":440,"height":440,
+      "mark":{"type":"square","size":30,"cornerRadius":0.5,"stroke":null,"cursor":"default"},
       "encoding":{
-        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,135.5],"nice":false,"zero":false}},
-        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,135.5],"nice":false,"zero":false}},
-        "opacity":{"condition":{"test":"datum.i < round(pct * 100)","value":1},"value":0.13}
+        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,67.5],"nice":false,"zero":false}},
+        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,67.5],"nice":false,"zero":false}},
+        "opacity":{"condition":{"test":"datum.i < round(pct * 25)","value":1},"value":0.13}
       }
     }
   },
