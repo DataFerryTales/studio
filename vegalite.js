@@ -416,14 +416,14 @@ const TEMPLATES = [
         {"calculate":"floor(datum.macro / 10)","as":"macroRow"},
         {"calculate":"datum.mini % 2","as":"miniCol"},
         {"calculate":"floor(datum.mini / 2)","as":"miniRow"},
-        {"calculate":"datum.macroCol * 2.7 + datum.miniCol","as":"x"},
-        {"calculate":"datum.macroRow * 5.9 + datum.miniRow","as":"y"}
+        {"calculate":"datum.macroCol * 2.6 + datum.miniCol","as":"x"},
+        {"calculate":"datum.macroRow * 5.7 + datum.miniRow","as":"y"}
       ],
-      "width":200,"height":460,
-      "mark":{"type":"square","size":45,"cornerRadius":1,"stroke":null,"cursor":"default"},
+      "width":230,"height":520,
+      "mark":{"type":"square","size":18,"cornerRadius":0.5,"stroke":null,"cursor":"default"},
       "encoding":{
-        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,25.8],"nice":false,"zero":false}},
-        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,57.6],"nice":false,"zero":false}},
+        "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,24.9],"nice":false,"zero":false}},
+        "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,55.8],"nice":false,"zero":false}},
         "opacity":{"condition":{"test":"datum.i < round(pct * 10)","value":1},"value":0.15}
       }
     }
