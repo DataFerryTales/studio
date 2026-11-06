@@ -404,10 +404,11 @@ const TEMPLATES = [
     }
   },
   { id:"waffle-decimal", name:"WAFFLE 0.1%", icon:"▦.%",
-    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"pct + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
+    spec: { "$schema":SCHEMA, "title":{"text":["Percentage of people who actually get back to you","after saying 'reach out if you need anything'"],"subtitle":{"expr":"tenths > 0 ? whole + '.' + tenths + '%' : whole + '%'"},"subtitleFontWeight":900,"subtitleFontSize":32,"subtitlePadding":8},
       "data":{"sequence":{"start":0,"stop":1000,"as":"i"}},
       "params":[
-        {"name":"pct","value":0.3,"bind":{"input":"number","min":0,"max":100,"step":0.1,"name":"Percentage  "}}
+        {"name":"whole","value":0,"bind":{"input":"number","min":0,"max":100,"step":1,"name":"Percent  "}},
+        {"name":"tenths","value":3,"bind":{"input":"number","min":0,"max":9,"step":1,"name":"Decimal (0-9)  "}}
       ],
       "transform":[
         {"calculate":"floor(datum.i / 10)","as":"macro"},
@@ -424,7 +425,7 @@ const TEMPLATES = [
       "encoding":{
         "x":{"field":"x","type":"quantitative","axis":null,"scale":{"domain":[-0.5,24.9],"nice":false,"zero":false}},
         "y":{"field":"y","type":"quantitative","axis":null,"scale":{"domain":[-0.5,55.8],"nice":false,"zero":false}},
-        "opacity":{"condition":{"test":"datum.i < round(pct * 10)","value":1},"value":0.15}
+        "opacity":{"condition":{"test":"datum.i < whole * 10 + tenths","value":1},"value":0.15}
       }
     }
   },
